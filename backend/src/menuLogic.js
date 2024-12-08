@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createRoom, joinRoom, getRoomPlayers } = require('./rooms');
+const { createRoom, joinRoom, getRoomPlayers, getAllRooms } = require('./rooms');
 
 // Create a room
 router.post('/rooms', (req, res) => {
@@ -34,5 +34,12 @@ router.get('/rooms/:roomId/players', (req, res) => {
     const players = getRoomPlayers(roomId);
     res.status(200).json({ roomId, players });
 });
+
+// Get list of all rooms
+router.get('/rooms', (req, res) => {
+    const roomList = getAllRooms();
+    res.status(200).json({ rooms: roomList });
+});
+
 
 module.exports = router;

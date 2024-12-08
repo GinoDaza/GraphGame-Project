@@ -20,9 +20,14 @@ function getRoomPlayers(roomId) {
     return rooms[roomId] || [];
 }
 
+function getAllRooms() {
+    return Object.keys(rooms);
+}
+
 module.exports = {
     createRoom,
     joinRoom,
     getRoomPlayers,
-    rooms // Exporting for debugging or testing
+    rooms,
+    getAllRooms // Export the new function
 };
