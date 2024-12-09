@@ -78,7 +78,7 @@ button:hover {
 }
 
 #game {
-    display: flex;
+    display: none;
 }
 
 #chat {

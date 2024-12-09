@@ -9,6 +9,7 @@ const gameContainer = document.getElementById('game-container');
 const messageInput = document.getElementById('message-input');
 const sendMessage = document.getElementById('send-message');
 const messagesContainer = document.getElementById('messages');
+const game = document.getElementById('game');
 
 let selectedRoom = null;
 let socket; // WebSocket connection
@@ -137,6 +138,7 @@ socket.on('sendMessage', (messageInfo) => {
 function startGame(roomId) {
     menu.style.display = 'none';
     gameContainer.style.display = 'block';
+    game.style.display = 'flex';
     currentRoom = roomId;
 
     // Join the room via WebSocket
