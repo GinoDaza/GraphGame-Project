@@ -39,6 +39,7 @@ button:hover {
     width: 1024px;
     height: 768px;
     background-color: #000;
+    border: solid 1px #61dafb;
 }
 
 #room-list-container {
@@ -70,4 +71,52 @@ button:hover {
 .room-item.selected {
     background-color: #61dafb;
     color: #282c34;
+}
+
+.hidden {
+    display: none;
+}
+
+#game {
+    display: none;
+}
+
+#chat {
+    border: solid 1px #61dafb;
+    border-radius: 5px;
+    width: 350px;
+    height: 600px;
+    margin-left: 100px;
+    display: flex;
+    flex-direction: column;
+}
+
+#messages {
+    flex: 1;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    word-break: break-word;
+    padding-left: 10px;
+    padding-right: 10px;
+    text-align: left;
+}
+
+#divider {
+    border: solid 1px #61dafb;
+}
+
+#chat-bottom {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: fit-content;
+}
+
+.messageUser {
+    font-weight: bold;
+}
+
+.chatMessage {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }

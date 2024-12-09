@@ -6,9 +6,14 @@ const roomListContainer = document.getElementById('room-list-container');
 const roomListElement = document.getElementById('room-list');
 const menu = document.getElementById('menu');
 const gameContainer = document.getElementById('game-container');
+const messageInput = document.getElementById('message-input');
+const sendMessage = document.getElementById('send-message');
+const messagesContainer = document.getElementById('messages');
+const game = document.getElementById('game');
 
 let selectedRoom = null;
 let socket; // WebSocket connection
+let currentRoom;
 
 // Connect to WebSocket server immediately
 socket = io(config.wsUrl);
@@ -87,18 +92,62 @@ socket.on('sendPlayersInfo', (playersInfo) => {
     console.log("holas2");
 });
 
+// Send message
+sendMessage.addEventListener('click', () => {
+    sendMessageFunction();
+});
+
+document.addEventListener('keyup', (event) => {
+    if(document.activeElement !== messageInput) {
+        return;
+    }
+
+    if(event.key === 'Enter') {
+        sendMessageFunction();
+    }
+});
+
+const sendMessageFunction = () => {
+    if(messageInput.value === '') {
+        return;
+    }
+    socket.emit('sendMessage', {message: messageInput.value});
+    messageInput.value = '';
+};
+
+// Receive message
+socket.on('sendMessage', (messageInfo) => {
+    const newMessage = document.createElement('div');
+    newMessage.classList.add('chatMessage');
+
+    const user = document.createElement('span');
+
+    user.textContent = messageInfo.playerId;
+    user.classList.add('messageUser');
+
+    const message = document.createTextNode(`: ${messageInfo.message}`)
+
+    newMessage.appendChild(user);
+    newMessage.appendChild(message);
+
+    messagesContainer.appendChild(newMessage);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
+
 // Start the game
 function startGame(roomId) {
     menu.style.display = 'none';
     gameContainer.style.display = 'block';
+    game.style.display = 'flex';
+    currentRoom = roomId;
 
     // Join the room via WebSocket
     socket.emit('joinRoom', roomId, (response) => {
         if (response.success) {
             console.log(`Joined room: ${roomId}`);
             // Initialize Phaser game
-            initializeGame(socket, roomId, response.playersInfo);
             initializeGameUI();
+            initializeGame(socket, roomId, response.playersInfo, () => document.activeElement === messageInput);
         } else {
             alert(response.error || 'Failed to join room.');
         }
