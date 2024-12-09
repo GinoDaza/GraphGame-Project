@@ -1,4 +1,4 @@
-function initializeGame(socket, roomId, playersInfo) {
+function initializeGame(socket, roomId, playersInfo, isInputFocused) {
     const phaserConfig = {
         type: Phaser.AUTO,
         width: 800,
@@ -25,7 +25,7 @@ function initializeGame(socket, roomId, playersInfo) {
 
     function create() {
         // Add the player's square
-        player = this.add.rectangle(400, 300, 50, 50, 0x0000ff); // Blue square for the player
+        player = this.add.rectangle(400, 300, 20, 20, 0x0000ff); // Blue square for the player
 
         console.log("playersInfo", playersInfo);
 
@@ -34,7 +34,7 @@ function initializeGame(socket, roomId, playersInfo) {
             if(id == socket.id) {
                 return;
             }
-            const newPlayer = this.add.rectangle(info.x, info.y, 50, 50, 0xff0000);
+            const newPlayer = this.add.rectangle(info.x, info.y, 20, 20, 0xff0000);
             otherPlayers[id] = newPlayer;
         });
 
@@ -52,7 +52,7 @@ function initializeGame(socket, roomId, playersInfo) {
         // Handle other players joining
         socket.on('playerJoined', (playerData) => {
             if (!otherPlayers[playerData.playerId]) {
-                const newPlayer = this.add.rectangle(playerData.x, playerData.y, 50, 50, 0xff0000); // Red square for other players
+                const newPlayer = this.add.rectangle(playerData.x, playerData.y, 20, 20, 0xff0000); // Red square for other players
                 otherPlayers[playerData.playerId] = newPlayer;
             }
         });
@@ -67,7 +67,8 @@ function initializeGame(socket, roomId, playersInfo) {
         });
 
         // Handle player disconnections
-        socket.on('playerLeft', (playerId) => {
+        socket.on('playerLeft', (playerInfo) => {
+            const playerId = playerInfo.playerId;
             if (otherPlayers[playerId]) {
                 otherPlayers[playerId].destroy(); // Remove the square
                 delete otherPlayers[playerId];
@@ -77,6 +78,23 @@ function initializeGame(socket, roomId, playersInfo) {
 
     function update(time, delta) {
         let moved = false;
+
+        if(isInputFocused()) {
+            this.input.keyboard.removeAllKeys(true, true);
+            cursors.up.isDown = false;
+            cursors.down.isDown = false;
+            cursors.left.isDown = false;
+            cursors.right.isDown = false;
+        } else {
+            cursors = this.input.keyboard.addKeys({
+                up: Phaser.Input.Keyboard.KeyCodes.W,
+                down: Phaser.Input.Keyboard.KeyCodes.S,
+                left: Phaser.Input.Keyboard.KeyCodes.A,
+                right: Phaser.Input.Keyboard.KeyCodes.D
+            });
+        }
+
+        
 
         // Player movement logic
         if (cursors.up.isDown) {
@@ -95,6 +113,7 @@ function initializeGame(socket, roomId, playersInfo) {
             player.x += speed * delta / 1000;
             moved = true;
         }
+        
 
         // Notify server of movement
         if (moved) {

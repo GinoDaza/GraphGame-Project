@@ -80,8 +80,9 @@ function setupGame(server) {
         socket.on('disconnect', () => {
             console.log(`Player disconnected: ${socket.id}`);
             // Remove the player from all rooms they were part of
-            const roomIds = Array.from(socket.rooms).filter((room) => room !== socket.id);
-            roomIds.forEach((roomId) => {
+            const playerRooms = Object.keys(rooms).filter((roomId) => rooms[roomId].includes(socket.id));
+            delete playersInfo[socket.id];
+            playerRooms.forEach((roomId) => {
                 leaveRoom(roomId, socket.id);
                 io.to(roomId).emit('playerLeft', { playerId: socket.id });
                 console.log(`Player ${socket.id} removed from room ${roomId}`);
@@ -102,6 +103,14 @@ function setupGame(server) {
             const roomId = roomIds[0];
             socket.to(roomId).emit('playerMoved', {playerId: socket.id, x: playerData.x, y: playerData.y});
             playersInfo[socket.id] = {x: playerData.x, y: playerData.y};
+        });
+
+        // Handle messages
+        socket.on('sendMessage', (messageInfo) => {
+            console.log(`Player sent message: ${socket.id} sent ${messageInfo.message}`);
+            const roomIds = Array.from(socket.rooms).filter((room) => room !== socket.id);
+            const roomId = roomIds[0];
+            io.to(roomId).emit('sendMessage', {playerId: socket.id, message: messageInfo.message});
         });
     });
 }
