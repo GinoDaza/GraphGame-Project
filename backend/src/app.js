@@ -1,24 +1,10 @@
-const express = require('express');
 const http = require('http');
-const cors = require('cors');
 const config = require('./config');
-const menuLogic = require('./menuLogic');
-const setupGame = require('./game');
+const setupGame = require('./server');
 
-const app = express();
-const server = http.createServer(app);
+const server = http.createServer(); // Crea el servidor HTTP
+setupGame(server); // Configura el WebSocket Server con el servidor HTTP
 
-// Middleware
-app.use(cors()); // Enable CORS
-app.use(express.json()); // Parse JSON bodies
-
-// Routes
-app.use('/api', menuLogic);
-
-// Start WebSocket server
-setupGame(server);
-
-// Start the server
-server.listen(config.httpPort, config.hostname, () => {
-    console.log(`Server running at http://${config.hostname}:${config.httpPort}/`);
+server.listen(config.port, () => {
+    console.log(`WebSocket server running at http://${config.hostname}:${config.port}`);
 });

@@ -1,17 +1,16 @@
 {
   "name": "graph-game",
   "version": "1.0.0",
-  "description": "A multiplayer math-based game using WebSockets and Express.",
+  "description": "A multiplayer math-based game using WebSockets",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js"
   },
-  "keywords": ["game", "multiplayer", "express", "socket.io"],
+  "keywords": ["game", "multiplayer", "socket.io"],
   "author": "Salchitito, MDBT39",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "socket.io": "^4.7.2"
   },
   "devDependencies": {

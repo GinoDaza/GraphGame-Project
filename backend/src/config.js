@@ -1,6 +1,5 @@
 const config = {
-    httpPort: 3000,       // Port for the Express server
-    wsPort: 3001,         // Port for WebSocket server (optional if using same port)
+    port: 3000,           // Port where the WebSocket server will run
     hostname: 'localhost' // Server hostname
 };
 
