@@ -1,8 +1,8 @@
 function initializeGame(socket, roomId, playersInfo) {
     const phaserConfig = {
         type: Phaser.AUTO,
-        width: 800,
-        height: 600,
+        width: 1024,
+        height: 768,
         parent: 'game-container',
         backgroundColor: '#000000',
         scene: {
