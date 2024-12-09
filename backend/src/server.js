@@ -40,21 +40,24 @@ function setupGame(server) {
             const success = joinRoom(roomId, socket.id);
             if (success) {
                 socket.join(roomId);
+        
+                if (!socket.data.rooms) {
+                    socket.data.rooms = new Set();
+                }
+                socket.data.rooms.add(roomId);
+        
                 console.log(`Player ${socket.id} joined room ${roomId}`);
-                socket.to(roomId).emit('playerJoined', { playerId: socket.id, x: 400, y: 300});
-
-                // Sender players info
-                //console.log(`Enviando a ${socket.id}:`, playersInfo);
-                //socket.emit('sendPlayersInfo', playersInfo);
-                playersInfo[socket.id] = {x: 400, y: 300};
-
+                socket.to(roomId).emit('playerJoined', { playerId: socket.id, x: 400, y: 300 });
+        
+                playersInfo[socket.id] = { x: 400, y: 300 };
+        
                 callback({ success: true, playersInfo }); // Notify client of successful join
-
             } else {
                 console.log(`Failed to join room: Room ${roomId} does not exist or player already in room`);
                 callback({ success: false, error: 'Room does not exist or player already in room' });
             }
         });
+        
 
         // Handle function submission
         socket.on('sendFunction', ({ roomId, functionStr }) => {
@@ -67,26 +70,51 @@ function setupGame(server) {
             const success = leaveRoom(roomId, socket.id);
             if (success) {
                 socket.leave(roomId);
+        
+                if (socket.data.rooms) {
+                    socket.data.rooms.delete(roomId);
+                }
+        
                 console.log(`Player ${socket.id} left room ${roomId}`);
                 io.to(roomId).emit('playerLeft', { playerId: socket.id });
+        
+                if (playersInfo[socket.id]) {
+                    delete playersInfo[socket.id];
+                    console.log(`Player ${socket.id} removed from playersInfo`);
+                }
+        
                 callback({ success: true }); // Notify client of successful leave
             } else {
                 console.log(`Failed to leave room: Room ${roomId} does not exist or player is not in the room`);
                 callback({ success: false, error: 'Failed to leave room' });
             }
         });
+        
 
         // Handle disconnection
         socket.on('disconnect', () => {
             console.log(`Player disconnected: ${socket.id}`);
-            // Remove the player from all rooms they were part of
-            const roomIds = Array.from(socket.rooms).filter((room) => room !== socket.id);
-            roomIds.forEach((roomId) => {
-                leaveRoom(roomId, socket.id);
-                io.to(roomId).emit('playerLeft', { playerId: socket.id });
-                console.log(`Player ${socket.id} removed from room ${roomId}`);
-            });
+        
+            if (socket.data.rooms) {
+                socket.data.rooms.forEach(roomId => {
+                    const success = leaveRoom(roomId, socket.id);
+                    if (success) {
+                        io.to(roomId).emit('playerLeft', { playerId: socket.id });
+                        console.log(`Player ${socket.id} removed from room ${roomId}`);
+                    } else {
+                        console.log(`Failed to remove player ${socket.id} from room ${roomId}`);
+                    }
+                });
+            } else {
+                console.log(`Player ${socket.id} was not part of any room`);
+            }
+        
+            if (playersInfo[socket.id]) {
+                delete playersInfo[socket.id];
+                console.log(`Player ${socket.id} removed from playersInfo`);
+            }
         });
+        
 
         // Handle request for list of rooms
         socket.on('getRooms', (callback) => {
