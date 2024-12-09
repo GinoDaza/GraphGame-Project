@@ -5,7 +5,8 @@ const {
     joinRoom,
     leaveRoom,
     getRoomPlayers,
-    getAllRooms
+    getAllRooms,
+    rooms
 } = require('./rooms');
 
 function setupGame(server) {
@@ -14,6 +15,8 @@ function setupGame(server) {
             origin: '*' // Allow any origin for simplicity (adjust in production)
         }
     });
+
+    const playersInfo = {};
 
     io.on('connection', (socket) => {
         console.log(`A player connected: ${socket.id}`);
@@ -24,7 +27,7 @@ function setupGame(server) {
             if (success) {
                 socket.join(roomId);
                 console.log(`Room ${roomId} created by ${socket.id}`);
-                io.to(roomId).emit('playerJoined', { playerId: socket.id });
+                socket.to(roomId).emit('playerJoined', { playerId: socket.id });
                 callback({ success: true }); // Notify client of successful creation
             } else {
                 console.log(`Failed to create room: Room ${roomId} already exists`);
@@ -38,8 +41,15 @@ function setupGame(server) {
             if (success) {
                 socket.join(roomId);
                 console.log(`Player ${socket.id} joined room ${roomId}`);
-                io.to(roomId).emit('playerJoined', { playerId: socket.id });
-                callback({ success: true }); // Notify client of successful join
+                socket.to(roomId).emit('playerJoined', { playerId: socket.id, x: 400, y: 300});
+
+                // Sender players info
+                //console.log(`Enviando a ${socket.id}:`, playersInfo);
+                //socket.emit('sendPlayersInfo', playersInfo);
+                playersInfo[socket.id] = {x: 400, y: 300};
+
+                callback({ success: true, playersInfo }); // Notify client of successful join
+
             } else {
                 console.log(`Failed to join room: Room ${roomId} does not exist or player already in room`);
                 callback({ success: false, error: 'Room does not exist or player already in room' });
@@ -83,6 +93,15 @@ function setupGame(server) {
             const roomsList = getAllRooms(); // Get all rooms from rooms.js
             console.log(`Rooms requested by ${socket.id}:`, roomsList);
             callback(roomsList); // Send the list back to the requesting client
+        });
+
+        // Handle movement
+        socket.on('playerMove', (playerData) => {
+            console.log(`Player moved: ${socket.id} moved to x: ${playerData.x}, y: ${playerData.y}`);
+            const roomIds = Array.from(socket.rooms).filter((room) => room !== socket.id);
+            const roomId = roomIds[0];
+            socket.to(roomId).emit('playerMoved', {playerId: socket.id, x: playerData.x, y: playerData.y});
+            playersInfo[socket.id] = {x: playerData.x, y: playerData.y};
         });
     });
 }

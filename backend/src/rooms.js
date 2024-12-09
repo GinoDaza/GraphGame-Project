@@ -4,7 +4,7 @@ const rooms = {}; // Store rooms and their players
 
 function createRoom(roomId, playerId) {
     if (!rooms[roomId]) {
-        rooms[roomId] = [playerId];
+        rooms[roomId] = [];
         return true;
     }
     return false;

@@ -1,4 +1,4 @@
-function initializeGame(socket, roomId) {
+function initializeGame(socket, roomId, playersInfo) {
     const phaserConfig = {
         type: Phaser.AUTO,
         width: 800,
@@ -27,6 +27,17 @@ function initializeGame(socket, roomId) {
         // Add the player's square
         player = this.add.rectangle(400, 300, 50, 50, 0x0000ff); // Blue square for the player
 
+        console.log("playersInfo", playersInfo);
+
+        Object.entries(playersInfo).forEach(([id, info]) => {
+            console.log("info", info);
+            if(id == socket.id) {
+                return;
+            }
+            const newPlayer = this.add.rectangle(info.x, info.y, 50, 50, 0xff0000);
+            otherPlayers[id] = newPlayer;
+        });
+
         // Set up input
         cursors = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -40,17 +51,18 @@ function initializeGame(socket, roomId) {
 
         // Handle other players joining
         socket.on('playerJoined', (playerData) => {
-            if (!otherPlayers[playerData.id]) {
+            if (!otherPlayers[playerData.playerId]) {
                 const newPlayer = this.add.rectangle(playerData.x, playerData.y, 50, 50, 0xff0000); // Red square for other players
-                otherPlayers[playerData.id] = newPlayer;
+                otherPlayers[playerData.playerId] = newPlayer;
             }
         });
 
         // Handle other players' movements
         socket.on('playerMoved', (playerData) => {
-            if (otherPlayers[playerData.id]) {
-                otherPlayers[playerData.id].x = playerData.x;
-                otherPlayers[playerData.id].y = playerData.y;
+            console.log(playerData);
+            if (otherPlayers[playerData.playerId]) {
+                otherPlayers[playerData.playerId].x = playerData.x;
+                otherPlayers[playerData.playerId].y = playerData.y;
             }
         });
 

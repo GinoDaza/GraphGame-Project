@@ -82,6 +82,11 @@ joinSelectedRoomButton.addEventListener('click', () => {
     }
 });
 
+// Handle receiving player's info
+socket.on('sendPlayersInfo', (playersInfo) => {
+    console.log("holas2");
+});
+
 // Start the game
 function startGame(roomId) {
     menu.style.display = 'none';
@@ -91,6 +96,8 @@ function startGame(roomId) {
     socket.emit('joinRoom', roomId, (response) => {
         if (response.success) {
             console.log(`Joined room: ${roomId}`);
+            // Initialize Phaser game
+            initializeGame(socket, roomId, response.playersInfo);
         } else {
             alert(response.error || 'Failed to join room.');
         }
@@ -108,7 +115,4 @@ function startGame(roomId) {
     socket.on('playerLeft', (player) => {
         console.log(`Player left: ${player.playerId}`);
     });
-
-    // Initialize Phaser game
-    initializeGame(socket, roomId);
 }
