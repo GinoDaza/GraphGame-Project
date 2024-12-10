@@ -8,6 +8,14 @@
     margin-bottom: 20px;
 }
 
+.menu input {
+    padding: 10px;
+    font-size: 16px;
+    margin: 10px;
+    border: solid 1px #ccc;
+    border-radius: 5px;
+}
+
 .menu button {
     padding: 10px 20px;
     font-size: 16px;
@@ -21,4 +29,32 @@
 
 .menu button:hover {
     background-color: #3b4049;
+}
+
+#room-list-container {
+    margin-top: 20px;
+}
+
+#room-list {
+    list-style: none;
+    padding: 0;
+}
+
+#room-list li {
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #282c34;
+    color: #61dafb;
+    cursor: pointer;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#room-list li:hover {
+    background-color: #3b4049;
+}
+
+#room-list li.selected {
+    background-color: #61dafb;
+    color: #282c34;
 }

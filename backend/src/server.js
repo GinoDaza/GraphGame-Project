@@ -35,6 +35,18 @@ function setupGame(server) {
             }
         });
 
+        // Handle starting the game
+        socket.on('startGame', (roomId, callback) => {
+            if (rooms[roomId]) {
+                console.log(`Game started in room ${roomId} by ${socket.id}`);
+                io.to(roomId).emit('gameStarted', { roomId }); // Notify all players in the room
+                callback({ success: true });
+            } else {
+                console.log(`Failed to start game: Room ${roomId} does not exist`);
+                callback({ success: false, error: 'Room does not exist' });
+            }
+        });        
+
         // Handle joining a room
         socket.on('joinRoom', (roomId, callback) => {
             const success = joinRoom(roomId, socket.id);
