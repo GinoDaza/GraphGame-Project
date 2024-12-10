@@ -2,32 +2,39 @@
 
 const rooms = {}; // Store rooms and their players
 
-function createRoom(roomId, playerId) {
-    if (!rooms[roomId]) {
-        rooms[roomId] = [];
+function createRoom(roomId, playerId){
+    if(!rooms[roomId] && playerId){
+        rooms[roomId] = [playerId];
         return true;
     }
     return false;
 }
 
 function joinRoom(roomId, playerId) {
-    if (rooms[roomId]) {
-        rooms[roomId].push(playerId);
-        return true;
-    }
-    return false;
-}
-
-function leaveRoom(roomId, playerId) {
-    if (rooms[roomId]) {
-        rooms[roomId] = rooms[roomId].filter(id => id !== playerId);
-        if (rooms[roomId].length === 0) {
-            delete rooms[roomId]; // Remove the room if it's empty
+    if (rooms[roomId] && playerId) {
+        if (!rooms[roomId].includes(playerId)) {
+            rooms[roomId].push(playerId);
         }
         return true;
     }
     return false;
 }
+
+
+function leaveRoom(roomId, playerId){
+    if(rooms[roomId] && playerId){
+        const index = rooms[roomId].indexOf(playerId);
+        if(index !== -1){
+            rooms[roomId].splice(index, 1);
+        }
+        if (rooms[roomId].length === 0) {
+            delete rooms[roomId];
+        }
+        return true;
+    }
+    return false;
+}
+
 
 function getRoomPlayers(roomId) {
     return rooms[roomId] || [];
