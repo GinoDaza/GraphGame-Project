@@ -1,14 +1,27 @@
-.menu {
+.lobby {
     text-align: center;
     padding: 20px;
 }
 
-.menu h2 {
+.lobby h2 {
     color: #61dafb;
     margin-bottom: 20px;
 }
 
-.menu button {
+.lobby ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.lobby li {
+    padding: 10px;
+    background-color: #282c34;
+    color: #61dafb;
+    margin: 5px 0;
+    border-radius: 5px;
+}
+
+.lobby button {
     padding: 10px 20px;
     font-size: 16px;
     margin: 10px;
@@ -19,6 +32,6 @@
     cursor: pointer;
 }
 
-.menu button:hover {
+.lobby button:hover {
     background-color: #3b4049;
 }

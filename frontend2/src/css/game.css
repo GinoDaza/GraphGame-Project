@@ -1,0 +1,41 @@
+.game {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+.game-chat,
+.game-play,
+.game-info {
+    width: 30%;
+    background-color: #20232a;
+    border: solid 1px #61dafb;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.game-chat h3,
+.game-play h3,
+.game-info h3 {
+    color: #61dafb;
+    margin-bottom: 10px;
+}
+
+.chat-box {
+    height: 200px;
+    overflow-y: auto;
+    background-color: #282c34;
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+}
+
+.game-container {
+    height: 300px;
+    background-color: #000;
+    color: #61dafb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+}

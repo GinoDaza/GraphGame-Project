@@ -4,3 +4,12 @@
   padding: 2rem;
   text-align: center;
 }
+
+#app h1 {
+  color: #61dafb;
+  margin-bottom: 1rem;
+}
+
+#app > div {
+  margin-top: 20px;
+}
