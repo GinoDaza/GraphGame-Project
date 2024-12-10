@@ -146,7 +146,6 @@ function startGame(roomId) {
         if (response.success) {
             console.log(`Joined room: ${roomId}`);
             // Initialize Phaser game
-            initializeGameUI();
             initializeGame(socket, roomId, response.playersInfo, () => document.activeElement === messageInput);
         } else {
             alert(response.error || 'Failed to join room.');

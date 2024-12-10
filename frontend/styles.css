@@ -81,12 +81,12 @@ button:hover {
     display: none;
 }
 
-#chat {
+#game-chat {
     border: solid 1px #61dafb;
     border-radius: 5px;
     width: 350px;
     height: 600px;
-    margin-left: 100px;
+    margin-left: 50px;
     display: flex;
     flex-direction: column;
 }

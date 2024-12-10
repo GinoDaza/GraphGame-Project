@@ -10,7 +10,6 @@
     <script src="config.js" defer></script>
     <script src="script.js" defer></script>
     <script src="game.js" defer></script>
-    <script src="gameUI.js" defer></script>
 </head>
 <body>
     <h1>Graph Game</h1>
@@ -24,12 +23,10 @@
         <button id="join-selected-room" disabled>Join Selected Room</button>
     </div>
     <div id="game">
-        <div id="chat">
+        <div id="game-chat">
             <h2>Messages</h2>
             <div id="divider"></div>
-            <div id="messages">
-                
-            </div>
+            <div id="messages"></div>
             <div id="divider"></div>
             <div id="chat-bottom">
                 <input id="message-input" placeholder="Enter a message">
@@ -37,7 +34,16 @@
             </div>
         </div>
         <div id="game-container" style="display: none;"></div>
+        <div id="game-controls">
+            <div id="fire-control">
+                <input id="fire-input" type="text" placeholder="Enter function: 3x^2">
+                <button id="fire-button">Fire</button>
+            </div>
+            <div id="move-control">
+                <input id="move-input" type="text" placeholder="Enter position: (x y)">
+                <button id="move-button">Move</button>
+            </div>
+        </div>
     </div>
-    
 </body>
 </html>
