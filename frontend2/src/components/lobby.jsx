@@ -6,32 +6,30 @@ function Lobby({ setScreen, roomId }) {
     const [players, setPlayers] = useState([]); // List of players in the room
 
     useEffect(() => {
-        // Join the room
-        socket.emit('joinRoom', roomId, (response) => {
+        // Fetch players in the room when the component mounts
+        socket.emit('getRoomPlayers', roomId, (response) => {
+            console.log('getRoomPlayers response:', response); // Log response
             if (response.success) {
-                setPlayers(response.playersInfo || []); // Set player info
+                setPlayers(response.players); // Update the list of players
             } else {
-                alert(response.error || 'Failed to join room');
-                setScreen('menu');
+                alert(response.error || 'Failed to retrieve players');
+                setScreen('menu'); // Navigate back to the menu if room doesn't exist
             }
         });
 
         // Update player list when someone joins or leaves
         socket.on('playerJoined', (player) => {
-            setPlayers((prevPlayers) => [...prevPlayers, player]);
+            console.log('Player joined:', player); // Log the player joined
+            setPlayers((prevPlayers) => [...prevPlayers, player.playerId]);
         });
 
         socket.on('playerLeft', (playerId) => {
-            setPlayers((prevPlayers) => prevPlayers.filter((p) => p.id !== playerId));
+            console.log('Player left:', playerId); // Log the player left
+            setPlayers((prevPlayers) => prevPlayers.filter((id) => id !== playerId));
         });
 
         return () => {
-            // Leave the room when unmounting
-            socket.emit('leaveRoom', roomId, (response) => {
-                if (!response.success) {
-                    console.error(response.error || 'Failed to leave room');
-                }
-            });
+            // Clean up event listeners when the component unmounts
             socket.off('playerJoined');
             socket.off('playerLeft');
         };
@@ -40,6 +38,7 @@ function Lobby({ setScreen, roomId }) {
     // Join the game
     const joinGame = () => {
         socket.emit('startGame', roomId, (response) => {
+            console.log('startGame response:', response); // Log response
             if (response.success) {
                 setScreen('game'); // Navigate to the Game component
             } else {
@@ -50,7 +49,15 @@ function Lobby({ setScreen, roomId }) {
 
     // Leave the lobby
     const leaveLobby = () => {
-        setScreen('menu'); // Navigate back to the menu
+        socket.emit('leaveRoom', roomId, (response) => {
+            console.log('leaveRoom response:', response); // Log response
+            if (response.success) {
+                console.log(`Player ${socket.id} left room ${roomId}`);
+                setScreen('menu'); // Navigate back to the menu
+            } else {
+                console.error(response.error || 'Failed to leave room');
+            }
+        });
     };
 
     return (
@@ -58,8 +65,8 @@ function Lobby({ setScreen, roomId }) {
             <h2>Lobby: {roomId}</h2>
             <ul>
                 {players.map((player) => (
-                    <li key={player.id}>
-                        {player.name || player.id} {player.id === socket.id ? '(You)' : ''}
+                    <li key={player}>
+                        {player} {player === socket.id ? '(You)' : ''}
                     </li>
                 ))}
             </ul>

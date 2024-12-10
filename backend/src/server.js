@@ -20,11 +20,11 @@ function setupGame(server) {
 
         // Handle room creation
         socket.on('createRoom', (roomId, callback) => {
-            const success = createRoom(roomId, socket.id); // Creator is added in `rooms.js`
+            const success = createRoom(roomId, socket.id);
             if (success) {
-                socket.join(roomId); // Creator joins the room on the server
+                socket.join(roomId);
                 console.log(`Room ${roomId} created by ${socket.id}`);
-                callback({ success: true, players: [socket.id] }); // Notify client with initial players
+                callback({ success: true, players: [socket.id] });
             } else {
                 console.log(`Failed to create room: Room ${roomId} already exists`);
                 callback({ success: false, error: 'Room already exists' });
@@ -57,11 +57,48 @@ function setupGame(server) {
                 if (success) {
                     io.to(roomId).emit('playerLeft', { playerId: socket.id });
                     console.log(`Player ${socket.id} removed from room ${roomId}`);
+                    if (!rooms[roomId]) {
+                        console.log(`Room ${roomId} has been deleted because it is empty`);
+                    }
                 } else {
                     console.log(`Failed to remove player ${socket.id} from room ${roomId}`);
                 }
             } else {
                 console.log(`Player ${socket.id} was not in any room`);
+            }
+        });
+
+        // Handle retrieving all rooms
+        socket.on('getRooms', (callback) => {
+            const roomList = getAllRooms();
+            console.log(`Rooms requested: ${roomList}`);
+            callback(roomList); // Return all rooms
+        });
+
+        // Handle getting players in a room
+        socket.on('getRoomPlayers', (roomId, callback) => {
+            if (rooms[roomId]) {
+                const players = getRoomPlayers(roomId);
+                console.log(`Players in room ${roomId}: ${players}`);
+                callback({ success: true, players });
+            } else {
+                console.log(`Room ${roomId} does not exist`);
+                callback({ success: false, error: 'Room does not exist' });
+            }
+        });
+
+        socket.on('leaveRoom', (roomId, callback) => {
+            const success = leaveRoom(roomId, socket.id);
+    
+            if (success) {
+                socket.leave(roomId); // Remove socket from the room
+                console.log(`Player ${socket.id} left room ${roomId}`);
+                io.to(roomId).emit('playerLeft', { playerId: socket.id }); // Notify others in the room
+    
+                callback({ success: true });
+            } else {
+                console.log(`Failed to remove player ${socket.id} from room ${roomId}`);
+                callback({ success: false, error: 'Failed to leave room' });
             }
         });
 
@@ -76,16 +113,9 @@ function setupGame(server) {
             }
         });
 
-        // Handle retrieving all rooms
-        socket.on('getRooms', (callback) => {
-            const roomList = getAllRooms();
-            console.log(`Rooms requested: ${roomList}`);
-            callback(roomList); // Return all rooms
-        });
 
         // Handle movement
         socket.on('playerMove', ({ roomId, x, y }) => {
-            console.log(`Player ${socket.id} moved in room ${roomId} to (${x}, ${y})`);
             io.to(roomId).emit('playerMoved', { playerId: socket.id, x, y });
         });
 

@@ -10,6 +10,7 @@ function Menu({ setScreen, setRoomId }) {
     // Fetch rooms when "View Rooms" is clicked
     const viewRooms = () => {
         socket.emit('getRooms', (roomsList) => {
+            console.log('Rooms fetched:', roomsList); // Log rooms fetched
             setRooms(roomsList);
         });
     };
@@ -22,6 +23,7 @@ function Menu({ setScreen, setRoomId }) {
         }
 
         socket.emit('createRoom', roomIdInput.trim(), (response) => {
+            console.log('Create room response:', response); // Log response
             if (response.success) {
                 setRoomId(roomIdInput.trim());
                 setScreen('lobby'); // Navigate to lobby
@@ -39,6 +41,7 @@ function Menu({ setScreen, setRoomId }) {
         }
 
         socket.emit('joinRoom', selectedRoom, (response) => {
+            console.log('Join room response:', response); // Log response
             if (response.success) {
                 setRoomId(selectedRoom);
                 setScreen('lobby'); // Navigate to lobby
