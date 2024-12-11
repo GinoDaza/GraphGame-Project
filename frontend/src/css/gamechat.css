@@ -26,6 +26,11 @@
     margin-top: 5px;
 }
 
+.chat-message-gif {
+    margin-top: 5px;
+    border-radius: 4px;
+}
+
 .chat-input {
     display: flex;
     margin-top: 10px;
