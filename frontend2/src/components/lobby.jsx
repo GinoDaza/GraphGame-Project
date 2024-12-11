@@ -63,7 +63,8 @@ function Lobby({ setScreen, roomId }) {
 
     return (
         <div className="lobby">
-            <h2>Lobby: {roomId}</h2>
+            <h2>Lobby</h2>
+            <h3>Room ID: {roomId}</h3>
             <ul>
                 {players.map((player) => (
                     <li key={player.playerId}>

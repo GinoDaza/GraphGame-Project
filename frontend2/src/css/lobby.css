@@ -8,6 +8,11 @@
     margin-bottom: 20px;
 }
 
+.lobby h3 {
+    color: #61dafb;
+    margin-bottom: 20px;
+}
+
 .lobby ul {
     list-style-type: none;
     padding: 0;
