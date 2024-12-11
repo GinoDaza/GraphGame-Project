@@ -7,13 +7,17 @@ function Menu({ setScreen, setRoomId }) {
     const [roomIdInput, setRoomIdInput] = useState(''); // State for Room ID input
     const [rooms, setRooms] = useState([]); // State for available rooms
     const [selectedRoom, setSelectedRoom] = useState(null); // State for selected room
-    const [name, setName] = useState('mdbt39'); // Default name
-    const [tempName, setTempName] = useState('mdbt39'); // Temporary name input
+    const [name, setName] = useState(''); // Default name
+    const [tempName, setTempName] = useState(''); // Temporary name input
 
     // Fetch rooms when the component mounts
     useEffect(() => {
         viewRooms();
-        changeName();
+        // Fetch name
+        socket.emit('getOwnName', (name) => {
+            setName(name);
+            setTempName(name);
+        });
     }, []);
 
     // Fetch rooms

@@ -148,6 +148,13 @@ function setupGame(server) {
             console.log(`${socket.id} changed their name to ${name}`);
             changeName(socket.id, name);
         });
+
+        // Handle get player name
+        socket.on('getOwnName', (callback) => {
+            console.log(`${socket.id} is trying to get their own name`);
+            const name = getPlayerInfo(socket.id).name;
+            callback(name);
+        });
     });
 }
 
