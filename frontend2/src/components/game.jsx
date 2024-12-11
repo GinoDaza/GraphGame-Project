@@ -1,11 +1,11 @@
 import '../css/game.css';
 import GameChat from './gamechat.jsx';
 
-function Game() {
+function Game({roomId}) {
     return (
         <div className="game">
             {/* Chat Section */}
-            <GameChat />
+            <GameChat roomId={roomId} />
 
             {/* Placeholder for Game Canvas */}
             <div className="game-play">
