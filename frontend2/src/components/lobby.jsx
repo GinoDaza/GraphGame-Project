@@ -9,7 +9,7 @@ function Lobby({ setScreen, roomId }) {
         // Fetch players in the room when the component mounts
         socket.emit('getRoomPlayers', roomId, (response) => {
             if (response.success) {
-                setPlayers(response.players); // Update the list of players
+                setPlayers(response.playersInfo); // Update the list of players
             } else {
                 alert(response.error || 'Failed to retrieve players');
                 setScreen('menu'); // Navigate back to the menu if room doesn't exist
@@ -18,9 +18,10 @@ function Lobby({ setScreen, roomId }) {
 
         // Update player list when someone joins
         socket.on('playerJoined', (player) => {
+            console.log(player);
             setPlayers((prevPlayers) => {
-                if (!prevPlayers.includes(player.playerId)) {
-                    return [...prevPlayers, player.playerId];
+                if (!prevPlayers.some(listPlayer => listPlayer.playerId === player.playerId)) {
+                    return [...prevPlayers, player];
                 }
                 return prevPlayers;
             });
@@ -28,7 +29,7 @@ function Lobby({ setScreen, roomId }) {
 
         // Update player list when someone leaves
         socket.on('playerLeft', ({ playerId }) => {
-            setPlayers((prevPlayers) => prevPlayers.filter((id) => id !== playerId));
+            setPlayers((prevPlayers) => prevPlayers.filter((player) => player.playerId !== playerId));
         });
 
         return () => {
@@ -65,8 +66,8 @@ function Lobby({ setScreen, roomId }) {
             <h2>Lobby: {roomId}</h2>
             <ul>
                 {players.map((player) => (
-                    <li key={player}>
-                        {player} {player === socket.id ? '(You)' : ''}
+                    <li key={player.playerId}>
+                        {player.name} {player.playerId === socket.id ? '(You)' : ''}
                     </li>
                 ))}
             </ul>
