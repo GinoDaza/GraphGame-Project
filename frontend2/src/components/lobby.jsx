@@ -8,7 +8,6 @@ function Lobby({ setScreen, roomId }) {
     useEffect(() => {
         // Fetch players in the room when the component mounts
         socket.emit('getRoomPlayers', roomId, (response) => {
-            console.log('getRoomPlayers response:', response); // Log response
             if (response.success) {
                 setPlayers(response.players); // Update the list of players
             } else {
@@ -17,14 +16,18 @@ function Lobby({ setScreen, roomId }) {
             }
         });
 
-        // Update player list when someone joins or leaves
+        // Update player list when someone joins
         socket.on('playerJoined', (player) => {
-            console.log('Player joined:', player); // Log the player joined
-            setPlayers((prevPlayers) => [...prevPlayers, player.playerId]);
+            setPlayers((prevPlayers) => {
+                if (!prevPlayers.includes(player.playerId)) {
+                    return [...prevPlayers, player.playerId];
+                }
+                return prevPlayers;
+            });
         });
 
-        socket.on('playerLeft', (playerId) => {
-            console.log('Player left:', playerId); // Log the player left
+        // Update player list when someone leaves
+        socket.on('playerLeft', ({ playerId }) => {
             setPlayers((prevPlayers) => prevPlayers.filter((id) => id !== playerId));
         });
 
@@ -38,7 +41,6 @@ function Lobby({ setScreen, roomId }) {
     // Join the game
     const joinGame = () => {
         socket.emit('startGame', roomId, (response) => {
-            console.log('startGame response:', response); // Log response
             if (response.success) {
                 setScreen('game'); // Navigate to the Game component
             } else {
@@ -50,9 +52,7 @@ function Lobby({ setScreen, roomId }) {
     // Leave the lobby
     const leaveLobby = () => {
         socket.emit('leaveRoom', roomId, (response) => {
-            console.log('leaveRoom response:', response); // Log response
             if (response.success) {
-                console.log(`Player ${socket.id} left room ${roomId}`);
                 setScreen('menu'); // Navigate back to the menu
             } else {
                 console.error(response.error || 'Failed to leave room');
