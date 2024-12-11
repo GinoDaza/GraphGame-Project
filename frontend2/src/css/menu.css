@@ -1,25 +1,42 @@
 .menu {
     text-align: center;
     padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .menu h2 {
     color: #61dafb;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.menu p {
+    color: #fff;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.menu .input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     margin-bottom: 20px;
 }
 
 .menu input {
     padding: 10px;
     font-size: 16px;
-    margin: 10px;
+    margin: 0;
     border: solid 1px #ccc;
     border-radius: 5px;
+    flex: 1;
 }
 
 .menu button {
     padding: 10px 20px;
     font-size: 16px;
-    margin: 10px;
     border: none;
     border-radius: 5px;
     background-color: #282c34;
@@ -31,6 +48,25 @@
     background-color: #3b4049;
 }
 
+.menu button[title="Reload Rooms"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    background-color: transparent;
+    border: none;
+    color: #61dafb;
+    cursor: pointer;
+}
+
+.menu button[title="Reload Rooms"]:hover {
+    background-color: #3b4049;
+    border-radius: 50%;
+}
+
 #room-list-container {
     margin-top: 20px;
 }
@@ -38,6 +74,8 @@
 #room-list {
     list-style: none;
     padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 #room-list li {
@@ -57,4 +95,11 @@
 #room-list li.selected {
     background-color: #61dafb;
     color: #282c34;
+}
+
+.menu .button-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
 }
