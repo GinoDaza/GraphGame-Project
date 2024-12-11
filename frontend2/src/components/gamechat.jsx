@@ -16,6 +16,10 @@ function GameChat({ roomId }) {
             }
             setMessages((prevMessages) => [...prevMessages, messageInfo]);
         });
+
+        return () => {
+            socket.off('newMessage');
+        };
     }, []);
 
     useLayoutEffect(() => {
@@ -44,7 +48,10 @@ function GameChat({ roomId }) {
             <div className="chat-box" ref={chatboxRef}>
                 {messages.map((msg, index) => (
                     <div key={index} className="chat-message">
-                        <strong>{msg.playerId}:</strong> {msg.message}
+                        { msg.message.slice(-4) !== '.gif' ?
+                        <><strong>{msg.playerId}:</strong> {msg.message} </>:
+                        <><strong>{msg.playerId}: </strong> <img className='chat-message-gif' width={250} src={msg.message}/> </>
+                        }
                     </div>
                 ))}
             </div>
