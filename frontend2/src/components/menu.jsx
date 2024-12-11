@@ -6,6 +6,14 @@ function Menu({ setScreen, setRoomId }) {
     const [roomIdInput, setRoomIdInput] = useState(''); // State for Room ID input
     const [rooms, setRooms] = useState([]); // State for available rooms
     const [selectedRoom, setSelectedRoom] = useState(null); // State for selected room
+    const [name, setName] = useState('');
+
+
+    // Change name
+    const changeName = (e) => {
+        setName(e.target.value);
+        socket.emit('changeName', {name: e.target.value});
+    }
 
     // Fetch rooms when "View Rooms" is clicked
     const viewRooms = () => {
@@ -59,6 +67,13 @@ function Menu({ setScreen, setRoomId }) {
     return (
         <div className="menu">
             <h2>Graph Game Menu</h2>
+            <div>
+                <input
+                    placeholder='Enter a name'
+                    value={name}
+                    onChange={changeName}
+                />
+            </div>
             <input
                 type="text"
                 placeholder="Enter Room ID"

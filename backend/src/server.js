@@ -7,6 +7,7 @@ const {
     getAllRooms,
     rooms
 } = require('./rooms');
+const { createPlayer, changeName, getPlayerInfo } = require('./playerinfo');
 
 function setupGame(server) {
     const io = new Server(server, {
@@ -17,6 +18,7 @@ function setupGame(server) {
 
     io.on('connection', (socket) => {
         console.log(`A player connected: ${socket.id}`);
+        createPlayer(socket.id);
 
         // Handle room creation
         socket.on('createRoom', (roomId, callback) => {
@@ -122,7 +124,15 @@ function setupGame(server) {
         // Handle messages
         socket.on('sendMessage', ({ roomId, message }) => {
             console.log(`Message in room ${roomId} from ${socket.id}: ${message}`);
-            io.to(roomId).emit('newMessage', { playerId: socket.id, message });
+            const playerInfo = getPlayerInfo(socket.id);
+            socket.to(roomId).emit('newMessage', { playerId: playerInfo.name ? playerInfo.name : 'NoName', message });
+            socket.emit('newMessage', {playerId: 'You', message});
+        });
+
+        // Handle name change
+        socket.on('changeName', ({ name }) => {
+            console.log(`${socket.id} changed their name to ${name}`);
+            changeName(socket.id, name);
         });
     });
 }
