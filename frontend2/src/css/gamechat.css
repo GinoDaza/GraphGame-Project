@@ -12,19 +12,24 @@
 .chat-box {
     flex: 1;
     overflow-y: scroll;
+    word-wrap: break-word;
+    word-break: break-word;
     background-color: #282c34;
     color: #61dafb;
     padding: 10px;
     border-radius: 4px;
+    text-align: left;
 }
 
 .chat-message {
     margin-bottom: 5px;
+    margin-top: 5px;
 }
 
 .chat-input {
     display: flex;
     margin-top: 10px;
+    gap: 10px;
 }
 
 .chat-input input {

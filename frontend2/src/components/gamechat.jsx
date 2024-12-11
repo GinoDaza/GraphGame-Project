@@ -1,18 +1,28 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import socket from '../app/socket'; // Ensure socket connection
 import '../css/gamechat.css';
 
 function GameChat({ roomId }) {
     const [messages, setMessages] = useState([]); // Chat messages
     const [inputMessage, setInputMessage] = useState(''); // Current message input
+    const chatboxRef = useRef(null);
 
     // Listen for new messages from the server
 
     useEffect(() => {
         socket.on('newMessage', (messageInfo) => {
+            if (chatboxRef.current) {
+                chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
+            }
             setMessages((prevMessages) => [...prevMessages, messageInfo]);
         });
     }, []);
+
+    useLayoutEffect(() => {
+        if (chatboxRef.current) {
+            chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
+        }
+    }, [messages]);
 
     // Handle sending a message
     const sendMessage = () => {
@@ -31,7 +41,7 @@ function GameChat({ roomId }) {
     return (
         <div className="game-chat">
             <h3>Chat</h3>
-            <div className="chat-box">
+            <div className="chat-box" ref={chatboxRef}>
                 {messages.map((msg, index) => (
                     <div key={index} className="chat-message">
                         <strong>{msg.playerId}:</strong> {msg.message}
