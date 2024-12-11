@@ -1,4 +1,5 @@
 import '../css/game.css';
+import Gameplay from './gameplay.jsx';
 import GameChat from './gamechat.jsx';
 
 function Game({roomId}) {
@@ -10,7 +11,9 @@ function Game({roomId}) {
             {/* Placeholder for Game Canvas */}
             <div className="game-play">
                 <h3>Game Canvas</h3>
-                <div className="game-container">[Phaser Canvas]</div>
+                <div className="game-container">
+                    <Gameplay/>
+                </div>
             </div>
 
             {/* Placeholder for Player Info */}
