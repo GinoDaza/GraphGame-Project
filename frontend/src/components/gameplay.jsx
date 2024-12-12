@@ -58,6 +58,7 @@ function Gameplay({ focused }) {
 
     function Preload() {
         this.load.image('player', 'src/assets/undertaleheart.png');
+        this.load.image('bricks', 'src/assets/minecraftbricks.jpg');
     }
 
     function Create() {
@@ -67,7 +68,21 @@ function Gameplay({ focused }) {
         player.setDisplaySize(20, 20);
         player.setCollideWorldBounds(true);
 
+        // Obstacles
+        const obstacles = this.physics.add.staticGroup();
+        obstacles.create(200, 200, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(200, 320, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(280, 200, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(280, 240, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(280, 280, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(320, 320, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(360, 200, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(360, 240, 'bricks').setDisplaySize(40, 40).refreshBody();
+        obstacles.create(360, 280, 'bricks').setDisplaySize(40, 40).refreshBody();
 
+        this.physics.add.collider(player, obstacles);
+
+        // Inputs
         inputs = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
             down: Phaser.Input.Keyboard.KeyCodes.S,
