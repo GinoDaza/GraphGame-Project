@@ -51,6 +51,8 @@ function Gameplay({ focused }) {
     let dashTimer = 0;
     let dashDir = {x: 0, y: 0};
     let dashCooldown = 0;
+    let dashUses = 2;
+    let dashRegenCooldown = 1.5;
 
     let isFocused = focused;
 
@@ -59,6 +61,8 @@ function Gameplay({ focused }) {
     function Preload() {
         this.load.image('player', 'src/assets/undertaleheart.png');
         this.load.image('bricks', 'src/assets/minecraftbricks.jpg');
+        this.load.audio('dash', 'src/assets/dash_red_left.wav');
+        //this.sound.decodeAudio('dash');
     }
 
     function Create() {
@@ -110,7 +114,16 @@ function Gameplay({ focused }) {
             dashCooldown -= delta / 1000;
         }
 
-        if(isFocused && !dash && inputs.dash.isDown && dashCooldown <= 0) {
+        if(dashUses < 2) {
+            if(dashRegenCooldown > 0) {
+                dashRegenCooldown -= delta / 1000;
+            } else {
+                dashRegenCooldown = 1.5;
+                dashUses++;
+            }
+        }
+
+        if(isFocused && !dash && Phaser.Input.Keyboard.JustDown(inputs.dash) && dashCooldown <= 0 && dashUses > 0) {
             if(inputs.up.isDown && !inputs.down.isDown) {
                 dashDir.y = -1;
             } else if(!inputs.up.isDown && inputs.down.isDown) {
@@ -129,9 +142,11 @@ function Gameplay({ focused }) {
 
             if(dashDir.x !== 0 || dashDir.y !== 0) {
                 dash = true;
-                dashCooldown = 1;
+                dashCooldown = 0.2;
+                dashUses--;
                 player.setVelocityX(speed * 4 * dashDir.x);
                 player.setVelocityY(speed * 4 * dashDir.y);
+                this.sound.play('dash', {volume: 0.5});
             }        
         }
 
