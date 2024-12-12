@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import socket from '../app/socket'; // Ensure socket connection
 import '../css/gamechat.css';
 
-function GameChat({ roomId }) {
+function GameChat({ roomId, setFocused }) {
     const [messages, setMessages] = useState([]); // Chat messages
     const [inputMessage, setInputMessage] = useState(''); // Current message input
     const chatboxRef = useRef(null);
@@ -62,6 +62,8 @@ function GameChat({ roomId }) {
                     value={inputMessage}
                     onInput={(e) => setInputMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                    onFocus={() => setFocused(false)}
+                    onBlur={() => setFocused(true)}
                 />
                 <button onClick={sendMessage}>Send</button>
             </div>

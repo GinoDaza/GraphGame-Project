@@ -1,18 +1,21 @@
 import '../css/game.css';
 import Gameplay from './gameplay.jsx';
 import GameChat from './gamechat.jsx';
+import { useEffect, useState } from 'preact/hooks';
 
 function Game({roomId}) {
+    const [focused, setFocused] = useState(true);
+
     return (
         <div className="game">
             {/* Chat Section */}
-            <GameChat roomId={roomId} />
+            <GameChat roomId={roomId} setFocused={setFocused}/>
 
             {/* Placeholder for Game Canvas */}
             <div className="game-play">
                 <h3>Game Canvas</h3>
                 <div className="game-container">
-                    <Gameplay/>
+                    <Gameplay focused={focused}/>
                 </div>
             </div>
 

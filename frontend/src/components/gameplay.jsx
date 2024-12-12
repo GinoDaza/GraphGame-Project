@@ -1,8 +1,12 @@
 import Phaser, { Scene } from 'phaser'
 import { useEffect, useRef } from 'preact/hooks';
 
-function Gameplay() {
+function Gameplay({ focused }) {
     const gameContainerRef = useRef(null);
+
+    useEffect(() => {
+        console.log(focused);
+    });
 
     useEffect(() => {
         const config = {
@@ -48,6 +52,8 @@ function Gameplay() {
     let dashDir = {x: 0, y: 0};
     let dashCooldown = 0;
 
+    let isFocused = focused;
+
     const mouse = {x: 0, y: 0};
 
     function Preload() {
@@ -59,6 +65,8 @@ function Gameplay() {
         graphics = this.add.graphics();
         player = this.physics.add.sprite(0, 0, 'player');
         player.setDisplaySize(20, 20);
+        player.setCollideWorldBounds(true);
+
 
         inputs = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -70,6 +78,9 @@ function Gameplay() {
     }
 
     function Update(time, delta) {
+
+        //console.log(focused);
+
         graphics.clear();
         graphics.lineStyle(2, 0x808080, 0.5); // Restablecer estilo
         const xDiff = mouse.x - player.x;
@@ -84,7 +95,7 @@ function Gameplay() {
             dashCooldown -= delta / 1000;
         }
 
-        if(!dash && inputs.dash.isDown && dashCooldown <= 0) {
+        if(isFocused && !dash && inputs.dash.isDown && dashCooldown <= 0) {
             if(inputs.up.isDown && !inputs.down.isDown) {
                 dashDir.y = -1;
             } else if(!inputs.up.isDown && inputs.down.isDown) {
@@ -104,13 +115,13 @@ function Gameplay() {
             if(dashDir.x !== 0 || dashDir.y !== 0) {
                 dash = true;
                 dashCooldown = 1;
-            }            
+                player.setVelocityX(speed * 4 * dashDir.x);
+                player.setVelocityY(speed * 4 * dashDir.y);
+            }        
         }
 
         if(dash) {
             if(dashTimer < 0.1) {
-                player.x += speed * 4 * dashDir.x * delta / 1000;
-                player.y += speed * 4 * dashDir.y * delta / 1000;
                 dashTimer += delta / 1000;
             } else {
                 dash = false;
@@ -120,23 +131,34 @@ function Gameplay() {
             }
         }
 
-        if(!dash) {
-            if (inputs.up.isDown) {
-                player.y -= speed * delta / 1000;
+        if(!dash && isFocused) {
+            if(inputs.up.isDown && !inputs.down.isDown) {
+                player.setVelocityY(-speed);
                 moved = true;
-            }
-            if (inputs.down.isDown) {
-                player.y += speed * delta / 1000;
+            } else if(!inputs.up.isDown && inputs.down.isDown) {
+                player.setVelocityY(speed);
                 moved = true;
+            } else {
+                player.setVelocityY(0);
             }
-            if (inputs.left.isDown) {
-                player.x -= speed * delta / 1000;
+
+            if (inputs.left.isDown && !inputs.right.isDown) {
+                player.setVelocityX(-speed);
+                moved = true
+            } else if(!inputs.left.isDown && inputs.right.isDown) {
+                player.setVelocityX(speed);
                 moved = true;
+            } else {
+                player.setVelocityX(0);
             }
-            if (inputs.right.isDown) {
-                player.x += speed * delta / 1000;
-                moved = true;
-            }
+        }
+
+        if(!isFocused) {
+            inputs.up.isDown = false;
+            inputs.down.isDown = false;
+            inputs.left.isDown = false;
+            inputs.right.isDown = false;
+            inputs.dash.isDown = false;
         }
     }
 
