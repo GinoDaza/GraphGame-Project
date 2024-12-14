@@ -148,13 +148,18 @@ function setupGame(server) {
             io.to(roomId).emit('playerJoinedGame', {playerId: socket.id, name: name ? name : 'NoName', x, y});
         });
 
-
         // Handle movement
         socket.on('playerMove', ({ roomId, x, y }) => {
             console.log(`Player ${socket.id} moved to x: ${x} y: ${y} in room ${roomId}`);
             changePos(socket.id, x, y);
             io.to(roomId).emit('playerMoved', { playerId: socket.id, x, y });
         });
+
+        // Handle new bullet
+        socket.on('createBullet', ({ roomId, x, y, xDir, yDir }) => {
+            console.log(`Player ${socket.id} created a bullet at x: ${x} y: ${y} with direction xDir: ${xDir}, yDir: ${yDir} in room ${roomId}`);
+            io.to(roomId).emit('newBullet', {playerId: socket.id, x, y, xDir, yDir});
+        })
 
         // Handle messages
         socket.on('sendMessage', ({ roomId, message }) => {

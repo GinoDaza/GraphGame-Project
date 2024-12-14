@@ -28,7 +28,7 @@ function Gameplay({ focused, roomId }) {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 0 }, // Sin gravedad
-                    debug: false
+                    debug: true
                 }
             }
         };
@@ -50,6 +50,10 @@ function Gameplay({ focused, roomId }) {
     }, []);
 
     const otherPlayers = {};
+
+    const bullets = [];
+
+    let obstacles;
 
     let player;
     let speed = 100;
@@ -73,6 +77,7 @@ function Gameplay({ focused, roomId }) {
         this.load.image('player', 'src/assets/undertaleheart.png');
         this.load.image('bricks', 'src/assets/minecraftbricks.jpg');
         this.load.image('otherPlayer', 'src/assets/BlueSoul.png');
+        this.load.image('bullet', 'src/assets/Diamond_Sword.png');
         this.load.audio('dash', 'src/assets/dash_red_left.wav');
         //this.sound.decodeAudio('dash');
     }
@@ -124,8 +129,28 @@ function Gameplay({ focused, roomId }) {
             otherPlayers[playerInfo.playerId].player.y = playerInfo.y;
         });
 
+        // Handle other bullets
+        socket.on('newBullet', ({playerId, x, y, xDir, yDir}) => {
+            if(playerId === socket.id) {
+                return;
+            }
+            const newBullet = this.physics.add.sprite(x, y, 'bullet');
+            newBullet.setDisplaySize(40, 40);
+            newBullet.body.setSize(100, 100);
+            newBullet.setVelocityX(xDir * 300);
+            newBullet.setVelocityY(yDir * 300);
+            newBullet.id = crypto.randomUUID();
+            const rotation = Math.atan2(yDir, xDir) + Phaser.Math.DegToRad(45);
+            newBullet.rotation = rotation;
+            this.physics.add.collider(newBullet, obstacles, () => {
+                newBullet.destroy();
+                bullets.splice(bullets.findIndex(bullet => bullet.id === newBullet.id), 1);
+            });
+            bullets.push(newBullet);
+        });
+
         // Obstacles
-        const obstacles = this.physics.add.staticGroup();
+        obstacles = this.physics.add.staticGroup();
         obstacles.create(200, 200, 'bricks').setDisplaySize(40, 40).refreshBody();
         obstacles.create(200, 320, 'bricks').setDisplaySize(40, 40).refreshBody();
         obstacles.create(280, 200, 'bricks').setDisplaySize(40, 40).refreshBody();
@@ -146,6 +171,18 @@ function Gameplay({ focused, roomId }) {
             right: Phaser.Input.Keyboard.KeyCodes.D,
             dash: Phaser.Input.Keyboard.KeyCodes.SHIFT
         }, false);
+
+        inputs.shoot = {};
+
+        this.input.on('pointerdown', () => {
+            inputs.shoot.isDown = true;
+            inputs.shoot.JustDown = true;
+        });
+
+        this.input.on('pointerup', () => {
+            inputs.shoot.isDown = false;
+            inputs.shoot.JustDown = false;
+        });
     }
 
     function Update(time, delta) {
@@ -156,9 +193,8 @@ function Gameplay({ focused, roomId }) {
             inputs.left.isDown = false;
             inputs.right.isDown = false;
             inputs.dash.isDown = false;
+            inputs.shoot.isDown = false;
         }
-
-        console.log(this.focused);
 
         graphics.clear();
         graphics.lineStyle(2, 0x808080, 0.5); // Restablecer estilo
@@ -250,6 +286,25 @@ function Gameplay({ focused, roomId }) {
                 player.setVelocityX(0);
             }
         }
+
+        if(inputs.shoot.JustDown) {
+            const newBullet = this.physics.add.sprite(player.x, player.y, 'bullet');
+            newBullet.setDisplaySize(40, 40);
+            newBullet.body.setSize(100, 100);
+            newBullet.setVelocityX(xDir * 300);
+            newBullet.setVelocityY(yDir * 300);
+            newBullet.id = crypto.randomUUID();
+            const rotation = Math.atan2(yDir, xDir) + Phaser.Math.DegToRad(45);
+            newBullet.rotation = rotation;
+            this.physics.add.collider(newBullet, obstacles, () => {
+                newBullet.destroy();
+                bullets.splice(bullets.findIndex(bullet => bullet.id === newBullet.id), 1);
+            });
+            bullets.push(newBullet);
+            socket.emit('createBullet', {roomId, x: player.x, y: player.y, xDir, yDir});
+        }
+
+        inputs.shoot.JustDown = false;
 
         if(player.x != initialX || player.y != initialY || moved) {
             socket.emit('playerMove', {roomId: roomId, x: player.x, y: player.y});
