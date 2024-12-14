@@ -1,15 +1,12 @@
-/* gamechat.jsx */
-
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import socket from '../app/socket'; // Asegúrate de que la conexión de socket está correcta
+import socket from '../app/socket';
 import '../css/gamechat.css';
 
 function GameChat({ roomId, setFocused }) {
-    const [messages, setMessages] = useState([]); // Mensajes del chat
-    const [inputMessage, setInputMessage] = useState(''); // Mensaje actual en el input
+    const [messages, setMessages] = useState([]);
+    const [inputMessage, setInputMessage] = useState('');
     const chatboxRef = useRef(null);
 
-    // Escuchar nuevos mensajes desde el servidor
     useEffect(() => {
         socket.on('newMessage', (messageInfo) => {
             setMessages((prevMessages) => [...prevMessages, messageInfo]);
@@ -23,26 +20,21 @@ function GameChat({ roomId, setFocused }) {
         };
     }, []);
 
-    // Scroll automático al final cuando se actualizan los mensajes
     useLayoutEffect(() => {
         if (chatboxRef.current) {
             chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
         }
     }, [messages]);
 
-    // Manejar el envío de un mensaje
     const sendMessage = () => {
-        if (inputMessage.trim() === '') return; // Evitar enviar mensajes vacíos
+        if (inputMessage.trim() === '') return;
 
-        // Emitir el mensaje al servidor
         socket.emit('sendMessage', { roomId, message: inputMessage });
-
-        // Limpiar el input
         setInputMessage('');
     };
 
     return (
-        <div className='game-chat'>
+        <div className="game-chat">
             <h3>Chat</h3>
             <div className="chat-box" ref={chatboxRef}>
                 {messages.map((msg, index) => (

@@ -1,5 +1,3 @@
-/* game.jsx */
-
 import '../css/game.css';
 import Gameplay from './gameplay.jsx';
 import GameChat from './gamechat.jsx';
@@ -11,14 +9,15 @@ function Game({ roomId }) {
 
     return (
         <div className="game">
-            {/* Chat Section */}
-            <GameChat roomId={roomId} setFocused={setFocused} />
-
-            {/* Game Canvas */}
-            <Gameplay focused={focused} roomId={roomId} />
-
-            {/* Player Info */}
-            <GameInfo />
+            <div className="game-chat-container">
+                <GameChat roomId={roomId} setFocused={setFocused} />
+            </div>
+            <div className="game-play-container">
+                <Gameplay focused={focused} roomId={roomId} />
+            </div>
+            <div className="game-info-container">
+                <GameInfo />
+            </div>
         </div>
     );
 }

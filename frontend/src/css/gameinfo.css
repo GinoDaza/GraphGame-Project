@@ -10,14 +10,6 @@
     flex-direction: column;
     height: 100%;
     box-sizing: border-box;
-}
-
-.game-info h3 {
-    color: #61dafb;
-    margin-bottom: 10px;
-}
-
-.game-info p {
     color: #ffffff;
     word-wrap: break-word;
     word-break: break-word;
