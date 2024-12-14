@@ -16,8 +16,8 @@ function Gameplay({ focused, roomId }) {
     useEffect(() => {
         const config = {
             type: Phaser.AUTO,
-            width: 600,
-            height: 600,
+            width: 1024,
+            height: 768,
             parent: gameContainerRef.current,
             scene: {
                 preload: Preload,

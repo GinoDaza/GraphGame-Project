@@ -42,7 +42,7 @@ function GameChat({ roomId, setFocused }) {
     };
 
     return (
-        <>
+        <div className='game-chat'>
             <h3>Chat</h3>
             <div className="chat-box" ref={chatboxRef}>
                 {messages.map((msg, index) => (
@@ -71,7 +71,7 @@ function GameChat({ roomId, setFocused }) {
                 />
                 <button onClick={sendMessage}>Send</button>
             </div>
-        </>
+        </div>
     );
 }
 

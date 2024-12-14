@@ -1,0 +1,24 @@
+/* gameinfo.css */
+
+.game-info {
+    border: 1px solid #61dafb;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #20232a; 
+    color: #61dafb;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.game-info h3 {
+    color: #61dafb;
+    margin-bottom: 10px;
+}
+
+.game-info p {
+    color: #ffffff;
+    word-wrap: break-word;
+    word-break: break-word;
+}

@@ -4,9 +4,9 @@ import '../css/gameinfo.css';
 
 function GameInfo() {
     return (
-        <div>
+        <div className="game-info">
             <h3>Player Info</h3>
-            <p>Info sobre el jugador o configuraciones del juego...</p>
+            <p>Information about the player or game settings...</p>
         </div>
     );
 }
