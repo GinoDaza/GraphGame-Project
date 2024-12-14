@@ -1,20 +1,21 @@
+/* gamechat.jsx */
+
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import socket from '../app/socket'; // Ensure socket connection
+import socket from '../app/socket'; // Asegúrate de que la conexión de socket está correcta
 import '../css/gamechat.css';
 
 function GameChat({ roomId, setFocused }) {
-    const [messages, setMessages] = useState([]); // Chat messages
-    const [inputMessage, setInputMessage] = useState(''); // Current message input
+    const [messages, setMessages] = useState([]); // Mensajes del chat
+    const [inputMessage, setInputMessage] = useState(''); // Mensaje actual en el input
     const chatboxRef = useRef(null);
 
-    // Listen for new messages from the server
-
+    // Escuchar nuevos mensajes desde el servidor
     useEffect(() => {
         socket.on('newMessage', (messageInfo) => {
+            setMessages((prevMessages) => [...prevMessages, messageInfo]);
             if (chatboxRef.current) {
                 chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
             }
-            setMessages((prevMessages) => [...prevMessages, messageInfo]);
         });
 
         return () => {
@@ -22,36 +23,39 @@ function GameChat({ roomId, setFocused }) {
         };
     }, []);
 
+    // Scroll automático al final cuando se actualizan los mensajes
     useLayoutEffect(() => {
         if (chatboxRef.current) {
             chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
         }
     }, [messages]);
 
-    // Handle sending a message
+    // Manejar el envío de un mensaje
     const sendMessage = () => {
-        if (inputMessage.trim() === '') return; // Avoid sending empty messages
+        if (inputMessage.trim() === '') return; // Evitar enviar mensajes vacíos
 
-        // Emit the message to the server
+        // Emitir el mensaje al servidor
         socket.emit('sendMessage', { roomId, message: inputMessage });
 
-        // Add the message to the local chat (optional, depending on server echo)
-        //setMessages((prevMessages) => [...prevMessages, { playerId: 'You', message: inputMessage }]);
-
-        // Clear the input
+        // Limpiar el input
         setInputMessage('');
     };
 
     return (
-        <div className="game-chat">
+        <>
             <h3>Chat</h3>
             <div className="chat-box" ref={chatboxRef}>
                 {messages.map((msg, index) => (
                     <div key={index} className="chat-message">
-                        { msg.message.slice(-4) !== '.gif' ?
-                        <><strong>{msg.playerId}:</strong> {msg.message} </>:
-                        <><strong>{msg.playerId}: </strong> <img className='chat-message-gif' width={250} src={msg.message}/> </>
-                        }
+                        {msg.message.slice(-4) !== '.gif' ? (
+                            <>
+                                <strong>{msg.playerId}:</strong> {msg.message}
+                            </>
+                        ) : (
+                            <>
+                                <strong>{msg.playerId}:</strong> <img className="chat-message-gif" width={250} src={msg.message} alt="gif" />
+                            </>
+                        )}
                     </div>
                 ))}
             </div>
@@ -67,7 +71,7 @@ function GameChat({ roomId, setFocused }) {
                 />
                 <button onClick={sendMessage}>Send</button>
             </div>
-        </div>
+        </>
     );
 }
 

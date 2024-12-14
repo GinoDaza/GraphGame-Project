@@ -1,8 +1,10 @@
+/* gamechat.css */
+
 .game-chat {
+    background-color: #20232a;
     border: 1px solid #61dafb;
     border-radius: 8px;
     padding: 10px;
-    width: 300px;
     display: flex;
     flex-direction: column;
 }
@@ -20,8 +22,7 @@
 }
 
 .chat-message {
-    margin-bottom: 5px;
-    margin-top: 5px;
+    margin: 5px 0;
 }
 
 .chat-message-gif {

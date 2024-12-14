@@ -1,14 +1,12 @@
+/* app.css */
+
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
+  height: 100%;
+  width: 100%;
   text-align: center;
 }
 
-#app h1 {
+#app h1, h3 {
   color: #61dafb;
   margin-bottom: 1rem;
-}
-
-#app > div {
-  margin-top: 20px;
 }
