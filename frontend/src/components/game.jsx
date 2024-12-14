@@ -15,7 +15,7 @@ function Game({roomId}) {
             <div className="game-play">
                 <h3>Game Canvas</h3>
                 <div className="game-container">
-                    <Gameplay focused={focused}/>
+                    <Gameplay focused={focused} roomId={roomId}/>
                 </div>
             </div>
 

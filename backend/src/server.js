@@ -7,7 +7,7 @@ const {
     getAllRooms,
     rooms
 } = require('./rooms');
-const { createPlayer, changeName, getPlayerInfo } = require('./playerinfo');
+const { createPlayer, changeName, getPlayerInfo, changePos } = require('./playerinfo');
 
 function setupGame(server) {
     const io = new Server(server, {
@@ -46,7 +46,7 @@ function setupGame(server) {
                     playersInfo.push({playerId: player, name: name ? name : 'NoName'});
                 });
                 const name = getPlayerInfo(socket.id).name;
-                io.to(roomId).emit('playerJoined', { playerId: socket.id, name: name ? name : 'NoName'});
+                io.to(roomId).emit('playerJoinedRoom', { playerId: socket.id, name: name ? name : 'NoName'});
                 callback({ success: true, playersInfo }); // Return updated players
             } else {
                 console.log(`Failed to join room: Room ${roomId} does not exist or player already in room`);
@@ -129,9 +129,30 @@ function setupGame(server) {
             }
         });
 
+        // Handle game join
+        socket.on('joinGame', ({roomId, x, y}, callback) => {
+            console.log(`${socket.id} joined game on room ${roomId}}`);
+            const players = getRoomPlayers(roomId);
+            const info = {};
+            players.forEach(player => {
+                playerInfo = getPlayerInfo(player);
+                info[player] = {name: playerInfo.name, x: playerInfo.x, y: playerInfo.y};
+            });
+
+            console.log(info);
+
+            callback(info);
+
+            const name = getPlayerInfo(socket.id).name;
+
+            io.to(roomId).emit('playerJoinedGame', {playerId: socket.id, name: name ? name : 'NoName', x, y});
+        });
+
 
         // Handle movement
         socket.on('playerMove', ({ roomId, x, y }) => {
+            console.log(`Player ${socket.id} moved to x: ${x} y: ${y} in room ${roomId}`);
+            changePos(socket.id, x, y);
             io.to(roomId).emit('playerMoved', { playerId: socket.id, x, y });
         });
 

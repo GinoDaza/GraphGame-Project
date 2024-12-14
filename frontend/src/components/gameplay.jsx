@@ -1,12 +1,17 @@
 import Phaser, { Scene } from 'phaser'
 import { useEffect, useRef } from 'preact/hooks';
+import socket from '../app/socket';
 
-function Gameplay({ focused }) {
+function Gameplay({ focused, roomId }) {
     const gameContainerRef = useRef(null);
+    const phaserRef = useRef(null);
 
     useEffect(() => {
         console.log(focused);
-    });
+        if(phaserRef.current) {
+            phaserRef.current.scene.scenes[0].focused = focused;
+        }
+    }, [focused]);
 
     useEffect(() => {
         const config = {
@@ -28,17 +33,23 @@ function Gameplay({ focused }) {
             }
         };
 
-        const game = new Phaser.Game(config);
+        phaserRef.current = new Phaser.Game(config);
 
-        document.addEventListener('mousemove', (event) => {
+        const handleMouseMove = (event) => {
             mouse.x = mouseInput.x;
             mouse.y = mouseInput.y;
-        });
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
 
         return () => {
-            game.destroy(true);
+            phaserRef.current.destroy(true);
+            document.removeEventListener('mousemove', handleMouseMove);
+
         };
     }, []);
+
+    const otherPlayers = {};
 
     let player;
     let speed = 100;
@@ -54,13 +65,14 @@ function Gameplay({ focused }) {
     let dashUses = 2;
     let dashRegenCooldown = 1.5;
 
-    let isFocused = focused;
+    let moved;
 
     const mouse = {x: 0, y: 0};
 
     function Preload() {
         this.load.image('player', 'src/assets/undertaleheart.png');
         this.load.image('bricks', 'src/assets/minecraftbricks.jpg');
+        this.load.image('otherPlayer', 'src/assets/BlueSoul.png');
         this.load.audio('dash', 'src/assets/dash_red_left.wav');
         //this.sound.decodeAudio('dash');
     }
@@ -68,9 +80,49 @@ function Gameplay({ focused }) {
     function Create() {
         mouseInput = this.input.activePointer;
         graphics = this.add.graphics();
-        player = this.physics.add.sprite(0, 0, 'player');
+        player = this.physics.add.sprite(20, 20, 'player');
         player.setDisplaySize(20, 20);
         player.setCollideWorldBounds(true);
+
+        this.focused = focused;
+
+        // Get other player's info
+        socket.emit('joinGame', {roomId, x: 20, y: 20}, (info) => {
+            console.log(info);
+            Object.entries(info).forEach(([id, {name, x, y}]) => {
+                if(id === socket.id) {
+                    return;
+                }
+                const otherPlayer = this.physics.add.sprite(x, y, 'otherPlayer');
+                otherPlayer.setDisplaySize(20, 20);
+                otherPlayers[id] = {name: name, player: otherPlayer};
+            });
+        });
+
+        // Handle new player joining
+        socket.on('playerJoinedGame', (playerInfo) => {
+            if(playerInfo.playerId === socket.id) {
+                return;
+            }
+            const newPlayer = this.physics.add.sprite(playerInfo.x, playerInfo.y, 'otherPlayer');
+            newPlayer.setDisplaySize(20, 20);
+            otherPlayers[playerInfo.playerId] = {name: playerInfo.name, player: newPlayer};
+        });
+
+        // Handle player leaving
+        socket.on('playerLeft', (playerInfo) => {
+            otherPlayers[playerInfo.playerId].player.destroy();
+            delete otherPlayers[playerInfo.playerId];
+        });
+
+        // Handle other player's movement
+        socket.on('playerMoved', (playerInfo) => {
+            if(playerInfo.playerId === socket.id) {
+                return;
+            }
+            otherPlayers[playerInfo.playerId].player.x = playerInfo.x;
+            otherPlayers[playerInfo.playerId].player.y = playerInfo.y;
+        });
 
         // Obstacles
         const obstacles = this.physics.add.staticGroup();
@@ -93,12 +145,20 @@ function Gameplay({ focused }) {
             left: Phaser.Input.Keyboard.KeyCodes.A,
             right: Phaser.Input.Keyboard.KeyCodes.D,
             dash: Phaser.Input.Keyboard.KeyCodes.SHIFT
-        });
+        }, false);
     }
 
     function Update(time, delta) {
 
-        //console.log(focused);
+        if(!this.focused) {
+            inputs.up.isDown = false;
+            inputs.down.isDown = false;
+            inputs.left.isDown = false;
+            inputs.right.isDown = false;
+            inputs.dash.isDown = false;
+        }
+
+        console.log(this.focused);
 
         graphics.clear();
         graphics.lineStyle(2, 0x808080, 0.5); // Restablecer estilo
@@ -108,7 +168,14 @@ function Gameplay({ focused }) {
         const yDir = (yDiff) / (Math.sqrt(xDiff * xDiff + yDiff * yDiff));
         graphics.strokeLineShape(new Phaser.Geom.Line(player.x, player.y, player.x + xDir * 100, player.y + yDir * 100));
 
-        let moved = false;
+        if(moved) {
+            socket.emit('playerMove', {roomId: roomId, x: player.x, y: player.y});
+        }
+
+        moved = false;
+
+        const initialX = player.x;
+        const initialY = player.y;
 
         if(dashCooldown > 0) {
             dashCooldown -= delta / 1000;
@@ -123,7 +190,7 @@ function Gameplay({ focused }) {
             }
         }
 
-        if(isFocused && !dash && Phaser.Input.Keyboard.JustDown(inputs.dash) && dashCooldown <= 0 && dashUses > 0) {
+        if(!dash && Phaser.Input.Keyboard.JustDown(inputs.dash) && dashCooldown <= 0 && dashUses > 0) {
             if(inputs.up.isDown && !inputs.down.isDown) {
                 dashDir.y = -1;
             } else if(!inputs.up.isDown && inputs.down.isDown) {
@@ -151,6 +218,7 @@ function Gameplay({ focused }) {
         }
 
         if(dash) {
+            moved = true;
             if(dashTimer < 0.1) {
                 dashTimer += delta / 1000;
             } else {
@@ -161,7 +229,7 @@ function Gameplay({ focused }) {
             }
         }
 
-        if(!dash && isFocused) {
+        if(!dash) {
             if(inputs.up.isDown && !inputs.down.isDown) {
                 player.setVelocityY(-speed);
                 moved = true;
@@ -174,7 +242,7 @@ function Gameplay({ focused }) {
 
             if (inputs.left.isDown && !inputs.right.isDown) {
                 player.setVelocityX(-speed);
-                moved = true
+                moved = true;
             } else if(!inputs.left.isDown && inputs.right.isDown) {
                 player.setVelocityX(speed);
                 moved = true;
@@ -183,12 +251,8 @@ function Gameplay({ focused }) {
             }
         }
 
-        if(!isFocused) {
-            inputs.up.isDown = false;
-            inputs.down.isDown = false;
-            inputs.left.isDown = false;
-            inputs.right.isDown = false;
-            inputs.dash.isDown = false;
+        if(player.x != initialX || player.y != initialY || moved) {
+            socket.emit('playerMove', {roomId: roomId, x: player.x, y: player.y});
         }
     }
 

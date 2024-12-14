@@ -17,7 +17,7 @@ function Lobby({ setScreen, roomId }) {
         });
 
         // Update player list when someone joins
-        socket.on('playerJoined', (player) => {
+        socket.on('playerJoinedRoom', (player) => {
             console.log(player);
             setPlayers((prevPlayers) => {
                 if (!prevPlayers.some(listPlayer => listPlayer.playerId === player.playerId)) {
@@ -34,7 +34,7 @@ function Lobby({ setScreen, roomId }) {
 
         return () => {
             // Clean up event listeners when the component unmounts
-            socket.off('playerJoined');
+            socket.off('playerJoinedRoom');
             socket.off('playerLeft');
         };
     }, [roomId, setScreen]);
