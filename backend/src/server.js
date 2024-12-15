@@ -1,26 +1,22 @@
-const http = require('http');
 const config = require('./config');
-const { Server } = require('socket.io');
 const { handleRoomEvents } = require('./modules/rooms_io');
 const { handlePlayerEvents } = require('./modules/playersInfo_io');
 const { createPlayer } = require('./modules/playersinfo');
 const { updateBullets, detectCollisions, bulletsInfo } = require('./modules/game');
-
-// Create HTTP server
-const server = http.createServer();
+const { instrument } = require('@socket.io/admin-ui');
 
 // Initialize WebSocket server
-const io = new Server(server, {
+const io = require('socket.io')( config.port, {
     cors: {
-        origin: '*'
+        credentials: true,
+        origin: ['*', 'https://admin.socket.io']
     }
-});
+})
 
-// Start the HTTP server
-server.listen(config.port, () => {
-    console.log(`WebSocket server running at http://${config.hostname}:${config.port}`);
-});
+console.log(`WebSocket server running at port ${config.port}`)
 
+// Add Admin UI
+instrument(io, { auth: false });
 
 io.on('connection', (socket) => {
     console.log(`A player connected: ${socket.id}`);
