@@ -1,5 +1,5 @@
 const config = {
-    port: 3000,
+    port: process.env.WS_PORT,
 };
 
 module.exports = config;

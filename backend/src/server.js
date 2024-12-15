@@ -1,3 +1,4 @@
+require('dotenv/config')
 const config = require('./config');
 const { handleRoomEvents } = require('./modules/rooms_io');
 const { handlePlayerEvents } = require('./modules/playersInfo_io');
