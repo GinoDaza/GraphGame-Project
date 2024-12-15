@@ -1,5 +1,5 @@
-const { getPlayerInfo } = require('./playerinfo');
-const { rooms } = require('./rooms/rooms')
+const { getPlayerInfo } = require('./playersinfo');
+const { rooms } = require('./rooms')
 
 const bulletsInfo = {};
 
