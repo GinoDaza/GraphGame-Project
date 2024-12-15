@@ -1,7 +1,11 @@
 const playersinfo = {};
 
 function createPlayer(playerId) {
-    playersinfo[playerId] = {};
+    playersinfo[playerId] = {inGame: false};
+}
+
+function joinPlayerToGame(playerId) {
+    playersinfo[playerId].inGame = true;
 }
 
 function changePos(playerId, x, y) {
@@ -19,6 +23,7 @@ function getPlayerInfo(playerId) {
 
 module.exports = {
     createPlayer,
+    joinPlayerToGame,
     changePos,
     changeName,
     getPlayerInfo,

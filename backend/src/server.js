@@ -7,7 +7,8 @@ const {
     getAllRooms,
     rooms
 } = require('./rooms');
-const { createPlayer, changeName, getPlayerInfo, changePos } = require('./playerinfo');
+const { createPlayer, changeName, getPlayerInfo, changePos, joinPlayerToGame } = require('./playerinfo');
+const { newBullet, updateBullets, detectCollisions, bulletsInfo } = require('./game');
 
 function setupGame(server) {
     const io = new Server(server, {
@@ -131,8 +132,9 @@ function setupGame(server) {
 
         // Handle game join
         socket.on('joinGame', ({roomId, x, y}, callback) => {
-            console.log(`${socket.id} joined game on room ${roomId}}`);
+            console.log(`${socket.id} joined game on room ${roomId}`);
             const players = getRoomPlayers(roomId);
+            joinPlayerToGame(socket.id);
             const info = {};
             players.forEach(player => {
                 playerInfo = getPlayerInfo(player);
@@ -150,15 +152,16 @@ function setupGame(server) {
 
         // Handle movement
         socket.on('playerMove', ({ roomId, x, y }) => {
-            console.log(`Player ${socket.id} moved to x: ${x} y: ${y} in room ${roomId}`);
+            // console.log(`Player ${socket.id} moved to x: ${x} y: ${y} in room ${roomId}`);
             changePos(socket.id, x, y);
             io.to(roomId).emit('playerMoved', { playerId: socket.id, x, y });
         });
 
         // Handle new bullet
-        socket.on('createBullet', ({ roomId, x, y, xDir, yDir }) => {
-            console.log(`Player ${socket.id} created a bullet at x: ${x} y: ${y} with direction xDir: ${xDir}, yDir: ${yDir} in room ${roomId}`);
-            io.to(roomId).emit('newBullet', {playerId: socket.id, x, y, xDir, yDir});
+        socket.on('createBullet', ({ roomId, bulletId, x, y, xDir, yDir, speed}) => {
+            console.log(`Player ${socket.id} created a bullet at x: ${x} y: ${y} with direction xDir: ${xDir}, yDir: ${yDir} and speed: ${speed} in room ${roomId}`);
+            newBullet(roomId, socket.id, bulletId, x, y, xDir, yDir, speed);
+            io.to(roomId).emit('newBullet', {playerId: socket.id, bulletId, x, y, xDir, yDir, speed});
         })
 
         // Handle messages
@@ -182,6 +185,25 @@ function setupGame(server) {
             callback(name);
         });
     });
+
+    // Update bullets
+
+    let lastTime = Date.now();
+
+    setInterval(() => {
+        const now = Date.now();
+        const deltaTime = (now - lastTime) / 1000;
+        lastTime = now;
+        updateBullets(deltaTime);
+        detectCollisions(io);
+    }, 1000 / 60);
+
+    // Send updated bullets to clients
+    setInterval(() => {
+        for(const roomId in bulletsInfo) {
+            io.to(roomId).emit('updateBullets', bulletsInfo[roomId]);
+        }
+    }, 200);
 }
 
 module.exports = setupGame;

@@ -2,6 +2,10 @@ import Phaser, { Scene } from 'phaser'
 import { useEffect, useRef } from 'preact/hooks';
 import socket from '../app/socket';
 
+// Si se cambia esto también hay que cambiarlo en el backend en game.js
+const worldWidth = 1024;
+const worldHeight = 768;
+
 function Gameplay({ focused, roomId }) {
     const gameContainerRef = useRef(null);
     const phaserRef = useRef(null);
@@ -16,8 +20,8 @@ function Gameplay({ focused, roomId }) {
     useEffect(() => {
         const config = {
             type: Phaser.AUTO,
-            width: 1024,
-            height: 768,
+            width: worldWidth,
+            height: worldHeight,
             parent: gameContainerRef.current,
             scene: {
                 preload: Preload,
@@ -73,12 +77,35 @@ function Gameplay({ focused, roomId }) {
 
     const mouse = {x: 0, y: 0};
 
+    function createBullet(context, bulletId, x, y, xDir, yDir, speed, enemy, playerId) {
+        const newBullet = context.physics.add.sprite(x, y, 'bullet');
+        newBullet.body.setSize(80, 80);
+        newBullet.setDisplaySize(40, 40);
+        newBullet.setVelocityX(xDir * speed);
+        newBullet.setVelocityY(yDir * speed);
+        newBullet.custom = {};
+        newBullet.custom.id = bulletId;
+        newBullet.custom.enemy = enemy;
+        if(enemy) {
+            newBullet.custom.playerId = playerId;
+        }
+        const rotation = Math.atan2(yDir, xDir) + Phaser.Math.DegToRad(45);
+        newBullet.rotation = rotation;
+
+        return newBullet;
+    }
+
     function Preload() {
         this.load.image('player', 'src/assets/undertaleheart.png');
         this.load.image('bricks', 'src/assets/minecraftbricks.jpg');
         this.load.image('otherPlayer', 'src/assets/BlueSoul.png');
         this.load.image('bullet', 'src/assets/Diamond_Sword.png');
         this.load.audio('dash', 'src/assets/dash_red_left.wav');
+        this.load.audio('explosion', 'src/assets/deltaruneexplosion.mp3');
+        this.load.spritesheet('explosion_gif', 'src/assets/explosion-boom.png', {
+            frameWidth: 71,
+            frameHeight: 98
+        });
         //this.sound.decodeAudio('dash');
     }
 
@@ -90,6 +117,14 @@ function Gameplay({ focused, roomId }) {
         player.setCollideWorldBounds(true);
 
         this.focused = focused;
+
+        // Animations
+        this.anims.create({
+            key: 'play_explosion_gif',
+            frames: this.anims.generateFrameNumbers('explosion_gif', { start: 0, end: 17 }),
+            frameRate: 10,
+            repeat: 0
+        });
 
         // Get other player's info
         socket.emit('joinGame', {roomId, x: 20, y: 20}, (info) => {
@@ -130,23 +165,55 @@ function Gameplay({ focused, roomId }) {
         });
 
         // Handle other bullets
-        socket.on('newBullet', ({playerId, x, y, xDir, yDir}) => {
+        socket.on('newBullet', ({playerId, bulletId, x, y, xDir, yDir, speed}) => {
             if(playerId === socket.id) {
                 return;
             }
-            const newBullet = this.physics.add.sprite(x, y, 'bullet');
-            newBullet.setDisplaySize(40, 40);
-            newBullet.body.setSize(100, 100);
-            newBullet.setVelocityX(xDir * 300);
-            newBullet.setVelocityY(yDir * 300);
-            newBullet.id = crypto.randomUUID();
-            const rotation = Math.atan2(yDir, xDir) + Phaser.Math.DegToRad(45);
-            newBullet.rotation = rotation;
+            const newBullet = createBullet(this, bulletId, x, y, xDir, yDir, speed, true, playerId);
             this.physics.add.collider(newBullet, obstacles, () => {
                 newBullet.destroy();
-                bullets.splice(bullets.findIndex(bullet => bullet.id === newBullet.id), 1);
+                bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
             });
             bullets.push(newBullet);
+        });
+
+        // Handle bullets update
+        socket.on('updateBullets', (bulletsInfo) => {
+            for(const bulletId in bulletsInfo) {
+                let exists = false;
+                bullets.forEach((bullet) => {
+                    if(bullet.custom.id === bulletId) {
+                        exists = true;
+                        bullet.x = bulletsInfo[bulletId].x;
+                        bullet.y = bulletsInfo[bulletId].y;
+                    }
+                });
+                if(!exists) {
+                    const {playerId, x, y, xDir, yDir, speed} = bulletsInfo[bulletId];
+                    const newBullet = createBullet(this, bulletId, x, y, xDir, yDir, speed, true, playerId);
+                    this.physics.add.collider(newBullet, obstacles, () => {
+                        newBullet.destroy();
+                        bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
+                    });
+                    bullets.push(newBullet);
+                }
+            }
+        });
+
+        // Handle bullet hit
+        socket.on('bulletHit', ({senderId, hitId, bulletId, bulletX, bulletY}) => {
+            const bulletIndex = bullets.findIndex(bullet => bullet.custom.id === bulletId);
+            if (bulletIndex !== -1) {
+                bullets[bulletIndex].destroy();
+                bullets.splice(bulletIndex, 1);
+            }
+            console.log(`${senderId} hit ${hitId}`);
+            this.sound.play('explosion', {volume: 0.3});
+            const gifSprite = this.add.sprite(bulletX, bulletY, 'explosion_gif');
+            gifSprite.play('play_explosion_gif');
+            gifSprite.on('animationcomplete', () => {
+                gifSprite.destroy();
+            });
         });
 
         // Obstacles
@@ -186,7 +253,6 @@ function Gameplay({ focused, roomId }) {
     }
 
     function Update(time, delta) {
-
         if(!this.focused) {
             inputs.up.isDown = false;
             inputs.down.isDown = false;
@@ -212,6 +278,15 @@ function Gameplay({ focused, roomId }) {
 
         const initialX = player.x;
         const initialY = player.y;
+
+        // Chequear balas
+        bullets.forEach(bullet => {
+            console.log("a");
+            if(bullet.x < 0 || bullet.x > worldWidth || bullet.y < 0 || bullet.y > worldHeight) {
+                bullet.destroy();
+                bullets.splice(bullets.findIndex(e => e.custom.id === bullet.custom.id), 1);
+            }
+        });
 
         if(dashCooldown > 0) {
             dashCooldown -= delta / 1000;
@@ -288,20 +363,13 @@ function Gameplay({ focused, roomId }) {
         }
 
         if(inputs.shoot.JustDown) {
-            const newBullet = this.physics.add.sprite(player.x, player.y, 'bullet');
-            newBullet.setDisplaySize(40, 40);
-            newBullet.body.setSize(100, 100);
-            newBullet.setVelocityX(xDir * 300);
-            newBullet.setVelocityY(yDir * 300);
-            newBullet.id = crypto.randomUUID();
-            const rotation = Math.atan2(yDir, xDir) + Phaser.Math.DegToRad(45);
-            newBullet.rotation = rotation;
+            const newBullet = createBullet(this, crypto.randomUUID(), player.x, player.y, xDir, yDir, 400, false);
             this.physics.add.collider(newBullet, obstacles, () => {
                 newBullet.destroy();
-                bullets.splice(bullets.findIndex(bullet => bullet.id === newBullet.id), 1);
+                bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
             });
             bullets.push(newBullet);
-            socket.emit('createBullet', {roomId, x: player.x, y: player.y, xDir, yDir});
+            socket.emit('createBullet', {roomId, bulletId: newBullet.custom.id, x: player.x, y: player.y, xDir, yDir, speed: 400});
         }
 
         inputs.shoot.JustDown = false;
