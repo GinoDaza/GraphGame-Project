@@ -10,17 +10,17 @@ function Menu({ setScreen, setRoomId }) {
     const [name, setName] = useState(''); // Default name
     const [tempName, setTempName] = useState(''); // Temporary name input
 
-    // Fetch rooms when the component mounts
+    // Fetch rooms and player name when the component mounts
     useEffect(() => {
         viewRooms();
-        // Fetch name
+        // Fetch player's name
         socket.emit('getOwnName', (name) => {
             setName(name);
             setTempName(name);
         });
     }, []);
 
-    // Fetch rooms
+    // Fetch available rooms
     const viewRooms = () => {
         socket.emit('getRooms', (roomsList) => {
             console.log('Rooms fetched:', roomsList); // Log rooms fetched
@@ -28,32 +28,32 @@ function Menu({ setScreen, setRoomId }) {
         });
     };
 
-    // Update name
+    // Update player name
     const changeName = () => {
         setName(tempName); // Commit the temporary name
         socket.emit('changeName', { name: tempName });
         console.log(`Name updated to ${tempName}`);
     };
 
-    // Create a new room
-    const createRoom = () => {
+    // Create and join a room
+    const createAndJoinRoom = () => {
         if (!roomIdInput.trim()) {
             alert('Please enter a Room ID.');
             return;
         }
 
-        socket.emit('createRoom', roomIdInput.trim(), (response) => {
-            console.log('Create room response:', response); // Log response
+        socket.emit('createAndJoinRoom', roomIdInput.trim(), (response) => {
+            console.log('Create and Join room response:', response); // Log response
             if (response.success) {
                 setRoomId(roomIdInput.trim());
-                setScreen('lobby'); // Navigate to lobby
+                setScreen('lobby'); // Navigate to the lobby
             } else {
-                alert(response.error || 'Failed to create room.');
+                alert(response.error || 'Failed to create or join room.');
             }
         });
     };
 
-    // Join the selected room
+    // Join a selected room
     const joinRoom = () => {
         if (!selectedRoom) {
             alert('Please select a room to join.');
@@ -64,7 +64,7 @@ function Menu({ setScreen, setRoomId }) {
             console.log('Join room response:', response); // Log response
             if (response.success) {
                 setRoomId(selectedRoom);
-                setScreen('lobby'); // Navigate to lobby
+                setScreen('lobby'); // Navigate to the lobby
             } else {
                 alert(response.error || 'Failed to join room.');
             }
@@ -95,9 +95,9 @@ function Menu({ setScreen, setRoomId }) {
                     placeholder="Enter Room ID"
                     value={roomIdInput}
                     onChange={(e) => setRoomIdInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && createRoom()}
+                    onKeyDown={(e) => e.key === 'Enter' && createAndJoinRoom()}
                 />
-                <button onClick={createRoom}>Create Room</button>
+                <button onClick={createAndJoinRoom}>Create & Join Room</button>
                 <button onClick={viewRooms} title="Reload Rooms">
                     <FaSyncAlt />
                 </button>

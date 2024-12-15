@@ -1,78 +1,75 @@
-const { createRoom, joinRoom, leaveRoom, getRoomPlayers, getAllRooms, rooms } = require('./rooms');
 const { getPlayerInfo } = require('./playersinfo');
 
 function handleRoomEvents(socket, io) {
     
-    // Handle room creation
-    socket.on('createRoom', (roomId, callback) => {
-        const success = createRoom(roomId, socket.id);
-        if (success) {
-            socket.join(roomId);
-            console.log(`Room ${roomId} created by ${socket.id}`);
-            callback({ success: true, players: [socket.id] });
-        } else {
-            console.log(`Failed to create room: Room ${roomId} already exists`);
+    // Handle create and joining a room
+    socket.on('createAndJoinRoom', (roomId, callback) => {
+        const existingRoom = io.sockets.adapter.rooms.get(roomId);
+        if (existingRoom) {
+            console.log(`Room ${roomId} already exists`);
             callback({ success: false, error: 'Room already exists' });
+        } else {
+            socket.join(roomId);
+            console.log(`Room ${roomId} created and joined by ${socket.id}`);
+            callback({ success: true, players: [socket.id] });
         }
-    });
+    });    
 
     // Handle joining a room
     socket.on('joinRoom', (roomId, callback) => {
-        const success = joinRoom(roomId, socket.id);
-        if (success) {
+        const existingRoom = io.sockets.adapter.rooms.get(roomId);
+        if (!existingRoom) {
+            console.log(`Failed to join room: Room ${roomId} does not exist`);
+            callback({ success: false, error: 'Room does not exist' });
+        } else if (existingRoom.has(socket.id)) {
+            console.log(`Player ${socket.id} is already in room ${roomId}`);
+            callback({ success: false, error: 'Already in room' });
+        } else {
             socket.join(roomId);
             console.log(`Player ${socket.id} joined room ${roomId}`);
-            const players = getRoomPlayers(roomId);
-            const playersInfo = players.map(player => {
-                const name = getPlayerInfo(player).name;
-                return { playerId: player, name: name ? name : 'NoName' };
+            
+            const players = [...existingRoom];
+            const playersInfo = players.map(playerId => {
+                const name = getPlayerInfo(playerId)?.name || 'NoName';
+                return { playerId, name };
             });
-            const name = getPlayerInfo(socket.id).name;
-            io.to(roomId).emit('playerJoinedRoom', { playerId: socket.id, name: name ? name : 'NoName' });
+    
+            const name = getPlayerInfo(socket.id)?.name || 'NoName';
+            io.to(roomId).emit('playerJoinedRoom', { playerId: socket.id, name });
             callback({ success: true, playersInfo });
-        } else {
-            console.log(`Failed to join room: Room ${roomId} does not exist or player already in room`);
-            callback({ success: false, error: 'Room does not exist or player already in room' });
         }
     });
 
     // Handle disconnection
     socket.on('disconnecting', () => {
         console.log(`Player disconnecting: ${socket.id}`);
-
+    
         const roomId = [...socket.rooms].find(room => room !== socket.id);
-
+    
         if (roomId) {
-            const success = leaveRoom(roomId, socket.id);
-            if (success) {
-                const name = getPlayerInfo(socket.id).name;
-                io.to(roomId).emit('playerLeft', { playerId: socket.id, name: name ? name : 'NoName' });
-                console.log(`Player ${socket.id} removed from room ${roomId}`);
-                if (!rooms[roomId]) {
-                    console.log(`Room ${roomId} has been deleted because it is empty`);
-                }
-            } else {
-                console.log(`Failed to remove player ${socket.id} from room ${roomId}`);
-            }
+            const name = getPlayerInfo(socket.id)?.name || 'NoName';
+            io.to(roomId).emit('playerLeft', { playerId: socket.id, name });
+            console.log(`Player ${socket.id} removed from room ${roomId}`);
         } else {
             console.log(`Player ${socket.id} was not in any room`);
         }
     });
 
-    // Handle retrieving all rooms
+    // Handle Retrieving All Rooms
     socket.on('getRooms', (callback) => {
-        const roomList = getAllRooms();
+        const roomList = Array.from(io.sockets.adapter.rooms.keys())
+            .filter(room => !io.sockets.adapter.sids.get(room));
         console.log(`Rooms requested: ${roomList}`);
-        callback(roomList); // Return all rooms
+        callback(roomList);
     });
 
-    // Handle getting players in a room
+    // Handle Getting Players in a Room
     socket.on('getRoomPlayers', (roomId, callback) => {
-        if (rooms[roomId]) {
-            const players = getRoomPlayers(roomId);
-            const playersInfo = players.map(player => {
-                const name = getPlayerInfo(player).name;
-                return { playerId: player, name: name ? name : 'NoName' };
+        const room = io.sockets.adapter.rooms.get(roomId);
+        if (room) {
+            const playersInfo = [...room].map(playerId => {
+                const name = getPlayerInfo(playerId)?.name || 'NoName';
+                return { playerId, name };
             });
             console.log(`Players in room ${roomId}:`, playersInfo);
             callback({ success: true, playersInfo });
@@ -81,33 +78,35 @@ function handleRoomEvents(socket, io) {
             callback({ success: false, error: 'Room does not exist' });
         }
     });
-
-    // Handle leaving a room
+    
+    // Handle Leaving a Room
     socket.on('leaveRoom', (roomId, callback) => {
-        const success = leaveRoom(roomId, socket.id);
-
-        if (success) {
-            socket.leave(roomId); // Remove socket from the room
+        const room = io.sockets.adapter.rooms.get(roomId);
+        if (room && room.has(socket.id)) {
+            socket.leave(roomId);
+            const name = getPlayerInfo(socket.id)?.name || 'NoName';
+            io.to(roomId).emit('playerLeft', { playerId: socket.id, name });
             console.log(`Player ${socket.id} left room ${roomId}`);
-            const name = getPlayerInfo(socket.id).name;
-            io.to(roomId).emit('playerLeft', { playerId: socket.id, name: name ? name : 'NoName' });
             callback({ success: true });
         } else {
-            console.log(`Failed to remove player ${socket.id} from room ${roomId}`);
+            console.log(`Failed to leave room: Room ${roomId} does not exist or player is not in the room`);
             callback({ success: false, error: 'Failed to leave room' });
         }
     });
-
-    // Handle game start
+    
+    // Handle Game Start
     socket.on('startGame', (roomId, callback) => {
-        if (rooms[roomId]) {
+        const room = io.sockets.adapter.rooms.get(roomId);
+        if (room) {
             console.log(`Game started in room ${roomId}`);
-            io.to(roomId).emit('gameStarted', { roomId }); // Notify all players in the room
+            io.to(roomId).emit('gameStarted', { roomId }); // Notifica a todos los jugadores
             callback({ success: true });
         } else {
+            console.log(`Failed to start game: Room ${roomId} does not exist`);
             callback({ success: false, error: 'Room does not exist' });
         }
     });
+     
 }
 
 module.exports = { handleRoomEvents };

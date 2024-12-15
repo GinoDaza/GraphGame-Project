@@ -1,25 +1,31 @@
 const { getPlayerInfo, changeName, changePos, joinPlayerToGame } = require('./playersinfo');
-const { getRoomPlayers } = require('./rooms');
 const { newBullet } = require('./game');
 
 function handlePlayerEvents(socket, io) {
     // Handle game join
     socket.on('joinGame', ({ roomId, x, y }, callback) => {
         console.log(`${socket.id} joined game on room ${roomId}`);
-        const players = getRoomPlayers(roomId);
+        
+        const room = io.sockets.adapter.rooms.get(roomId);
+
+        if (!room) {
+            console.log(`Room ${roomId} does not exist`);
+            return callback({ error: 'Room does not exist' });
+        }
+
         joinPlayerToGame(socket.id);
 
         const info = {};
-        players.forEach((player) => {
-            const playerInfo = getPlayerInfo(player);
-            info[player] = { name: playerInfo.name, x: playerInfo.x, y: playerInfo.y };
-        });
+        for (const playerId of room) {
+            const playerInfo = getPlayerInfo(playerId);
+            info[playerId] = { name: playerInfo?.name || 'NoName', x: playerInfo.x, y: playerInfo.y };
+        }
 
         console.log(info);
         callback(info);
 
-        const name = getPlayerInfo(socket.id).name;
-        io.to(roomId).emit('playerJoinedGame', { playerId: socket.id, name: name ? name : 'NoName', x, y });
+        const name = getPlayerInfo(socket.id)?.name || 'NoName';
+        io.to(roomId).emit('playerJoinedGame', { playerId: socket.id, name, x, y });
     });
 
     // Handle movement
