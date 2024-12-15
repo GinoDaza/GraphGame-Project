@@ -1,6 +1,7 @@
 import Phaser, { Scene } from 'phaser'
 import { useEffect, useRef } from 'preact/hooks';
 import socket from '../app/socket';
+import { v4 as uuidv4 } from 'uuid';
 
 // Si se cambia esto también hay que cambiarlo en el backend en game.js
 const worldWidth = 1024;
@@ -363,7 +364,7 @@ function Gameplay({ focused, roomId }) {
         }
 
         if(inputs.shoot.JustDown) {
-            const newBullet = createBullet(this, crypto.randomUUID(), player.x, player.y, xDir, yDir, 400, false);
+            const newBullet = createBullet(this, uuidv4(), player.x, player.y, xDir, yDir, 400, false);
             this.physics.add.collider(newBullet, obstacles, () => {
                 newBullet.destroy();
                 bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
