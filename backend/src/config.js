@@ -1,6 +1,6 @@
 const config = {
-    port: 3000,           // Port where the WebSocket server will run
-    hostname: 'localhost' // Server hostname
+    port: 3000,
+    hostname: 'localhost'
 };
 
 module.exports = config;
