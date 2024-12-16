@@ -6,7 +6,7 @@ cd backend/
 npm install
 docker build -t app .
 
-docker run -p $WS_PORT:$WS_PORT -d -e WS_HOST=$WS_HOST -e WS_PORT=$WS_PORT --name app_c app
+docker run --rm -p $WS_PORT:$WS_PORT -d -e WS_HOST=$WS_HOST -e WS_PORT=$WS_PORT --name app_c app
 
 cd ..
 cd frontend/
