@@ -1,9 +1,17 @@
 const { getPlayerInfo } = require('./playersinfo');
+const { v4: uuidv4 } = require('uuid');
 
 const bulletsInfo = {};
 
+const obstaclesInfo = {};
+
 const worldWidth = 900;
 const worldHeight = 650;
+
+function createObstacle(x, y, sizeX, sizeY) {
+    const uuid = uuidv4();
+    obstaclesInfo[uuid] = {x, y, sizeX, sizeY};
+}
 
 function newBullet(roomId, playerId, bulletId, x, y, xDir, yDir, speed, funct) {
     if (!bulletsInfo[roomId]) {
@@ -59,6 +67,10 @@ function updateBullets(deltatime) {
             if (isOutOfBounds(bullet.x, bullet.y)) {
                 delete bulletsInfo[roomId][bulletId];
             }
+
+            if (collidesWithObstacle(bullet.x, bullet.y)) {
+                delete bulletsInfo[roomId][bulletId];
+            }
         }
     }
 }
@@ -80,6 +92,11 @@ function detectCollisions(io) {
             const playerX = playerInfo.x;
             const playerY = playerInfo.y;
 
+            const playerLeft = playerX - playerSize / 2;
+            const playerRight = playerX + playerSize / 2;
+            const playerTop = playerY - playerSize / 2;
+            const playerBottom = playerY + playerSize / 2;
+
             for (const bulletId in bulletsInfo[roomId]) {
                 if (bulletsInfo[roomId][bulletId].playerId === playerId) {
                     continue;
@@ -88,11 +105,16 @@ function detectCollisions(io) {
                 const bulletX = bulletsInfo[roomId][bulletId].x;
                 const bulletY = bulletsInfo[roomId][bulletId].y;
 
+                const bulletLeft = bulletX - bulletSize / 2;
+                const bulletRight = bulletX + bulletSize / 2;
+                const bulletTop = bulletY - bulletSize / 2;
+                const bulletBottom = bulletY + bulletSize / 2;
+
                 if (
-                    playerX + playerSize > bulletX &&
-                    playerX < bulletX + bulletSize &&
-                    playerY + playerSize > bulletY &&
-                    playerY < bulletY + bulletSize
+                    playerRight > bulletLeft &&
+                    playerLeft < bulletRight &&
+                    playerBottom > bulletTop &&
+                    playerTop < bulletBottom
                 ) {
                     console.log(
                         `Collision in room ${roomId} between player ${playerId} and ${bulletsInfo[roomId][bulletId].playerId}'s bullet ${bulletId}`
@@ -115,7 +137,36 @@ function isOutOfBounds(x, y) {
     return x < 0 || x > worldWidth || y < 0 || y > worldHeight;
 }
 
+function collidesWithObstacle(x, y) {
+    for (const uuid in obstaclesInfo) {
+        const obstacle = obstaclesInfo[uuid];
+        const { x: ox, y: oy, sizeX, sizeY } = obstacle;
+
+        const bulletLeft = x - bulletSize / 2;
+        const bulletRight = x + bulletSize / 2;
+        const bulletTop = y - bulletSize / 2;
+        const bulletBottom = y + bulletSize / 2;
+
+        const obstacleLeft = ox - sizeX / 2;
+        const obstacleRight = ox + sizeX / 2;
+        const obstacleTop = oy - sizeY / 2;
+        const obstacleBottom = oy + sizeY / 2;
+
+        if (
+            bulletRight > obstacleLeft &&
+            bulletLeft < obstacleRight &&
+            bulletBottom > obstacleTop &&
+            bulletTop < obstacleBottom
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 module.exports = {
+    createObstacle,
     newBullet,
     updateBullets,
     detectCollisions,

@@ -33,7 +33,7 @@ function Gameplay({ focused, roomId, validFunct }) {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 0 }, // Sin gravedad
-                    debug: false
+                    debug: true
                 }
             }
         };
@@ -244,6 +244,7 @@ function Gameplay({ focused, roomId, validFunct }) {
         });
 
         // Obstacles
+        // Si añades o eliminas obstaculos hay que cambiarlo en el server.js tambien
         obstacles = this.physics.add.staticGroup();
         obstacles.create(200, 200, 'bricks').setDisplaySize(40, 40).refreshBody();
         obstacles.create(200, 320, 'bricks').setDisplaySize(40, 40).refreshBody();

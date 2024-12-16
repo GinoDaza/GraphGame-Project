@@ -3,7 +3,7 @@ const config = require('./config');
 const { handleRoomEvents } = require('./modules/rooms_io');
 const { handlePlayerEvents } = require('./modules/playersInfo_io');
 const { createPlayer } = require('./modules/playersinfo');
-const { updateBullets, detectCollisions, bulletsInfo } = require('./modules/game');
+const { createObstacle, updateBullets, detectCollisions, bulletsInfo } = require('./modules/game');
 const { instrument } = require('@socket.io/admin-ui');
 
 // Initialize WebSocket server
@@ -30,6 +30,17 @@ io.on('connection', (socket) => {
 
 });
 
+// Create obstacles
+createObstacle(200, 200, 40, 40);
+createObstacle(200, 320, 40, 40);
+createObstacle(280, 200, 40, 40);
+createObstacle(280, 240, 40, 40);
+createObstacle(280, 280, 40, 40);
+createObstacle(320, 320, 40, 40);
+createObstacle(360, 200, 40, 40);
+createObstacle(360, 240, 40, 40);
+createObstacle(360, 280, 40, 40);
+
 // Update bullets
 
 let lastTime = Date.now();
@@ -47,4 +58,4 @@ setInterval(() => {
     for(const roomId in bulletsInfo) {
         io.to(roomId).emit('updateBullets', bulletsInfo[roomId]);
     }
-}, 200);
+}, 100);
