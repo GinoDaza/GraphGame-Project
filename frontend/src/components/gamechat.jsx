@@ -6,6 +6,7 @@ function GameChat({ roomId, setFocused }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const chatboxRef = useRef(null);
+    const inputRef = useRef(null);
 
     useEffect(() => {
         socket.on('newMessage', (messageInfo) => {
@@ -27,6 +28,7 @@ function GameChat({ roomId, setFocused }) {
     }, [messages]);
 
     const sendMessage = () => {
+        inputRef.current.blur();
         if (inputMessage.trim() === '') return;
 
         socket.emit('sendMessage', { roomId, message: inputMessage });
@@ -53,6 +55,7 @@ function GameChat({ roomId, setFocused }) {
             </div>
             <div className="chat-input">
                 <input
+                    ref={inputRef}
                     type="text"
                     placeholder="Type a message..."
                     value={inputMessage}

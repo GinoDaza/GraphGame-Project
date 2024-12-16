@@ -36,10 +36,10 @@ function handlePlayerEvents(socket, io) {
     });
 
     // Handle new bullet
-    socket.on('createBullet', ({ roomId, bulletId, x, y, xDir, yDir, speed }) => {
+    socket.on('createBullet', ({ roomId, bulletId, x, y, xDir, yDir, speed, funct }) => {
         console.log(`Player ${socket.id} created a bullet at x: ${x}, y: ${y} in room ${roomId}`);
-        newBullet(roomId, socket.id, bulletId, x, y, xDir, yDir, speed);
-        io.to(roomId).emit('newBullet', { playerId: socket.id, bulletId, x, y, xDir, yDir, speed });
+        newBullet(roomId, socket.id, bulletId, x, y, xDir, yDir, speed, funct);
+        io.to(roomId).emit('newBullet', { playerId: socket.id, bulletId, initialX: x, initialY: y, x, y, initialXDir: xDir, initialYDir: yDir, xDir, yDir, speed, funct });
     });
 
     // Handle messages

@@ -4,19 +4,19 @@ import socket from '../app/socket';
 import { v4 as uuidv4 } from 'uuid';
 
 // Si se cambia esto también hay que cambiarlo en el backend en game.js
-const worldWidth = 1024;
-const worldHeight = 768;
+const worldWidth = 900;
+const worldHeight = 650;
 
-function Gameplay({ focused, roomId }) {
+function Gameplay({ focused, roomId, validFunct }) {
     const gameContainerRef = useRef(null);
     const phaserRef = useRef(null);
 
     useEffect(() => {
-        console.log(focused);
         if(phaserRef.current) {
             phaserRef.current.scene.scenes[0].focused = focused;
+            phaserRef.current.scene.scenes[0].validFunct = validFunct;
         }
-    }, [focused]);
+    }, [focused, validFunct]);
 
     useEffect(() => {
         const config = {
@@ -33,7 +33,7 @@ function Gameplay({ focused, roomId }) {
                 default: 'arcade',
                 arcade: {
                     gravity: { y: 0 }, // Sin gravedad
-                    debug: true
+                    debug: false
                 }
             }
         };
@@ -78,15 +78,19 @@ function Gameplay({ focused, roomId }) {
 
     const mouse = {x: 0, y: 0};
 
-    function createBullet(context, bulletId, x, y, xDir, yDir, speed, enemy, playerId) {
+    function createBullet(context, bulletId, initialX, initialY, x, y, initialXDir, initialYDir, xDir, yDir, speed, validFunct, enemy, playerId) {
         const newBullet = context.physics.add.sprite(x, y, 'bullet');
         newBullet.body.setSize(80, 80);
         newBullet.setDisplaySize(40, 40);
-        newBullet.setVelocityX(xDir * speed);
-        newBullet.setVelocityY(yDir * speed);
         newBullet.custom = {};
         newBullet.custom.id = bulletId;
         newBullet.custom.enemy = enemy;
+        newBullet.custom.speed = speed;
+        newBullet.custom.initialX = initialX;
+        newBullet.custom.initialY = initialY;
+        newBullet.custom.initialXDir = initialXDir;
+        newBullet.custom.initialYDir = initialYDir;
+        newBullet.custom.function = validFunct;
         if(enemy) {
             newBullet.custom.playerId = playerId;
         }
@@ -94,6 +98,21 @@ function Gameplay({ focused, roomId }) {
         newBullet.rotation = rotation;
 
         return newBullet;
+    }
+
+    function evaluateFunction(x, funct) {
+        const replaced = funct.replace(/\^/g, "**")
+        .replace(/sin/g, "Math.sin")
+        .replace(/cos/g, "Math.cos")
+        .replace(/tan/g, "Math.tan")
+        .replace(/sqrt/g, "Math.sqrt")
+        .replace(/log/g, "Math.log")
+        .replace(/exp/g, "Math.exp");
+
+        const func = new Function("x", `return ${replaced};`);
+        console.log("replaced", replaced);
+        console.log("y", func(x));
+        return func(x);
     }
 
     function Preload() {
@@ -118,6 +137,7 @@ function Gameplay({ focused, roomId }) {
         player.setCollideWorldBounds(true);
 
         this.focused = focused;
+        this.validFunct = validFunct;
 
         // Animations
         this.anims.create({
@@ -166,11 +186,11 @@ function Gameplay({ focused, roomId }) {
         });
 
         // Handle other bullets
-        socket.on('newBullet', ({playerId, bulletId, x, y, xDir, yDir, speed}) => {
+        socket.on('newBullet', ({playerId, bulletId, initialX, initialY, x, y, initialXDir, initialYDir, xDir, yDir, speed, funct}) => {
             if(playerId === socket.id) {
                 return;
             }
-            const newBullet = createBullet(this, bulletId, x, y, xDir, yDir, speed, true, playerId);
+            const newBullet = createBullet(this, bulletId, initialX, initialY, x, y, initialXDir, xDir, initialYDir, yDir, speed, funct, true, playerId);
             this.physics.add.collider(newBullet, obstacles, () => {
                 newBullet.destroy();
                 bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
@@ -179,6 +199,7 @@ function Gameplay({ focused, roomId }) {
         });
 
         // Handle bullets update
+        
         socket.on('updateBullets', (bulletsInfo) => {
             for(const bulletId in bulletsInfo) {
                 let exists = false;
@@ -190,8 +211,8 @@ function Gameplay({ focused, roomId }) {
                     }
                 });
                 if(!exists) {
-                    const {playerId, x, y, xDir, yDir, speed} = bulletsInfo[bulletId];
-                    const newBullet = createBullet(this, bulletId, x, y, xDir, yDir, speed, true, playerId);
+                    const {playerId, initialX, initialY, x, y, initialXDir, xDir, initialYDir, yDir, speed, funct} = bulletsInfo[bulletId];
+                    const newBullet = createBullet(this, bulletId, initialX, initialY, x, y, initialXDir, initialYDir, xDir, yDir, speed, funct, true, playerId);
                     this.physics.add.collider(newBullet, obstacles, () => {
                         newBullet.destroy();
                         bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
@@ -200,6 +221,7 @@ function Gameplay({ focused, roomId }) {
                 }
             }
         });
+        
 
         // Handle bullet hit
         socket.on('bulletHit', ({senderId, hitId, bulletId, bulletX, bulletY}) => {
@@ -280,13 +302,40 @@ function Gameplay({ focused, roomId }) {
         const initialX = player.x;
         const initialY = player.y;
 
-        // Chequear balas
+        // Actualizar balas
         bullets.forEach(bullet => {
-            console.log("a");
+            const angle = Math.atan2(-bullet.custom.initialYDir, bullet.custom.initialXDir);
+
+            const speed = bullet.custom.speed;
+            const currentXGlobal = bullet.x - bullet.custom.initialX;
+            const currentYGlobal = -(bullet.y - bullet.custom.initialY);
+
+            const currentXLocal = currentXGlobal * Math.cos(angle) + currentYGlobal * Math.sin(angle);
+
+            const dxLocal = 0.1;
+            const dyLocal = evaluateFunction(currentXLocal + dxLocal, bullet.custom.function) - evaluateFunction(currentXLocal, bullet.custom.function);
+            console.log("function", bullet.custom.function);
+            console.log("x", currentXLocal);
+            console.log("dx", dxLocal);
+            console.log("dy", dyLocal);
+            const magnitude = Math.sqrt(dxLocal ** 2 + dyLocal ** 2);
+            const unitXLocal = dxLocal / magnitude;
+            const unitYLocal = dyLocal / magnitude;
+
+            const unitXGlobal = unitXLocal * Math.cos(angle) - unitYLocal * Math.sin(angle);
+            const unitYGlobal = unitXLocal * Math.sin(angle) + unitYLocal * Math.cos(angle);
+
+            bullet.setVelocityX((unitXGlobal) * speed);
+            bullet.setVelocityY((-unitYGlobal) * speed);
+
+            const rotation = Math.atan2(-unitYGlobal, unitXGlobal) + Phaser.Math.DegToRad(45);
+            bullet.rotation = rotation;
+
             if(bullet.x < 0 || bullet.x > worldWidth || bullet.y < 0 || bullet.y > worldHeight) {
                 bullet.destroy();
                 bullets.splice(bullets.findIndex(e => e.custom.id === bullet.custom.id), 1);
             }
+
         });
 
         if(dashCooldown > 0) {
@@ -364,13 +413,13 @@ function Gameplay({ focused, roomId }) {
         }
 
         if(inputs.shoot.JustDown) {
-            const newBullet = createBullet(this, uuidv4(), player.x, player.y, xDir, yDir, 400, false);
+            const newBullet = createBullet(this, uuidv4(), player.x, player.y, player.x, player.y, xDir, yDir, xDir, yDir, 400, this.validFunct, false);
             this.physics.add.collider(newBullet, obstacles, () => {
                 newBullet.destroy();
                 bullets.splice(bullets.findIndex(bullet => bullet.custom.id === newBullet.custom.id), 1);
             });
             bullets.push(newBullet);
-            socket.emit('createBullet', {roomId, bulletId: newBullet.custom.id, x: player.x, y: player.y, xDir, yDir, speed: 400});
+            socket.emit('createBullet', {roomId, bulletId: newBullet.custom.id, x: player.x, y: player.y, xDir, yDir, speed: 400, funct: this.validFunct});
         }
 
         inputs.shoot.JustDown = false;

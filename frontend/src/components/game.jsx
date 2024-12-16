@@ -6,6 +6,7 @@ import { useState } from 'preact/hooks';
 
 function Game({ roomId }) {
     const [focused, setFocused] = useState(true);
+    const [validFunct, setValidFunct] = useState('0');
 
     return (
         <div className="game">
@@ -13,10 +14,10 @@ function Game({ roomId }) {
                 <GameChat roomId={roomId} setFocused={setFocused} />
             </div>
             <div className="game-play-container">
-                <Gameplay focused={focused} roomId={roomId} />
+                <Gameplay focused={focused} roomId={roomId} validFunct={validFunct}/>
             </div>
             <div className="game-info-container">
-                <GameInfo />
+                <GameInfo setFocused={setFocused} setValidFunct={setValidFunct}/>
             </div>
         </div>
     );

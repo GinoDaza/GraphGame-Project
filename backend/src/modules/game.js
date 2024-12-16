@@ -2,14 +2,27 @@ const { getPlayerInfo } = require('./playersinfo');
 
 const bulletsInfo = {};
 
-const worldWidth = 1024;
-const worldHeight = 768;
+const worldWidth = 900;
+const worldHeight = 650;
 
-function newBullet(roomId, playerId, bulletId, x, y, xDir, yDir, speed) {
+function newBullet(roomId, playerId, bulletId, x, y, xDir, yDir, speed, funct) {
     if (!bulletsInfo[roomId]) {
         bulletsInfo[roomId] = {};
     }
-    bulletsInfo[roomId][bulletId] = { playerId, x, y, xDir, yDir, speed };
+    bulletsInfo[roomId][bulletId] = { playerId, initialX: x, initialY: y, x, y, initialXDir: xDir, initialYDir: yDir, xDir, yDir, speed, funct };
+}
+
+function evaluateFunction(x, funct) {
+    const replaced = funct.replace(/\^/g, "**")
+    .replace(/sin/g, "Math.sin")
+    .replace(/cos/g, "Math.cos")
+    .replace(/tan/g, "Math.tan")
+    .replace(/sqrt/g, "Math.sqrt")
+    .replace(/log/g, "Math.log")
+    .replace(/exp/g, "Math.exp");
+
+    const func = new Function("x", `return ${replaced};`);
+    return func(x);
 }
 
 function updateBullets(deltatime) {
@@ -17,8 +30,31 @@ function updateBullets(deltatime) {
         for (const bulletId in bulletsInfo[roomId]) {
             const bullet = bulletsInfo[roomId][bulletId];
 
-            bullet.x += bullet.xDir * bullet.speed * deltatime;
-            bullet.y += bullet.yDir * bullet.speed * deltatime;
+            const angle = Math.atan2(-bullet.initialYDir, bullet.initialXDir);
+
+            const speed = bullet.speed;
+            const currentXGlobal = bullet.x - bullet.initialX;
+            const currentYGlobal = -(bullet.y - bullet.initialY);
+
+            const currentXLocal = currentXGlobal * Math.cos(angle) + currentYGlobal * Math.sin(angle);
+
+            const dxLocal = 0.01;
+            const dyLocal = evaluateFunction(currentXLocal + dxLocal, bullet.funct) - evaluateFunction(currentXLocal, bullet.funct);
+            const magnitude = Math.sqrt(dxLocal ** 2 + dyLocal ** 2);
+            const unitXLocal = dxLocal / magnitude;
+            const unitYLocal = dyLocal / magnitude;
+
+            const unitXGlobal = unitXLocal * Math.cos(angle) - unitYLocal * Math.sin(angle);
+            const unitYGlobal = unitXLocal * Math.sin(angle) + unitYLocal * Math.cos(angle);
+
+            // bullet.setVelocityX((unitXGlobal) * speed);
+            // bullet.setVelocityY((-unitYGlobal) * speed);
+
+            bullet.x += unitXGlobal * speed * deltatime;
+            bullet.y += -unitYGlobal * speed * deltatime;
+
+            // bullet.x += bullet.xDir * bullet.speed * deltatime;
+            // bullet.y += bullet.yDir * bullet.speed * deltatime;
 
             if (isOutOfBounds(bullet.x, bullet.y)) {
                 delete bulletsInfo[roomId][bulletId];
