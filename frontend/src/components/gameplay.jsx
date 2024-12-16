@@ -202,16 +202,20 @@ function Gameplay({ focused, roomId, validFunct }) {
         
         socket.on('updateBullets', (bulletsInfo) => {
             for(const bulletId in bulletsInfo) {
+                const {playerId, initialX, initialY, x, y, initialXDir, xDir, initialYDir, yDir, speed, funct} = bulletsInfo[bulletId];
                 let exists = false;
                 bullets.forEach((bullet) => {
                     if(bullet.custom.id === bulletId) {
                         exists = true;
-                        bullet.x = bulletsInfo[bulletId].x;
-                        bullet.y = bulletsInfo[bulletId].y;
+                        bullet.x = x;
+                        bullet.y = y;
+                        bullet.custom.initialX = initialX;
+                        bullet.custom.initialY = initialY;
+                        bullet.custom.initialXDir = initialXDir;
+                        bullet.custom.initialYDir = initialYDir;
                     }
                 });
                 if(!exists) {
-                    const {playerId, initialX, initialY, x, y, initialXDir, xDir, initialYDir, yDir, speed, funct} = bulletsInfo[bulletId];
                     const newBullet = createBullet(this, bulletId, initialX, initialY, x, y, initialXDir, initialYDir, xDir, yDir, speed, funct, true, playerId);
                     this.physics.add.collider(newBullet, obstacles, () => {
                         newBullet.destroy();
