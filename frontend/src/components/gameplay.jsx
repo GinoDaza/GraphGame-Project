@@ -243,6 +243,15 @@ function Gameplay({ focused, roomId, validFunct }) {
             });
         });
 
+        // Handle bullet deletion
+        socket.on('deleteBullet', ({ bulletId }) => {
+            const bulletIndex = bullets.findIndex(bullet => bullet.custom.id === bulletId);
+            if (bulletIndex !== -1) {
+                bullets[bulletIndex].destroy();
+                bullets.splice(bulletIndex, 1);
+            }
+        });
+
         // Obstacles
         // Si añades o eliminas obstaculos hay que cambiarlo en el server.js tambien
         obstacles = this.physics.add.staticGroup();

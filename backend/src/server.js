@@ -49,9 +49,9 @@ setInterval(() => {
     const now = Date.now();
     const deltaTime = (now - lastTime) / 1000;
     lastTime = now;
-    updateBullets(deltaTime);
+    updateBullets(io, deltaTime);
     detectCollisions(io);
-}, 1000 / 60);
+}, 1000 / 240);
 
 // Send updated bullets to clients
 setInterval(() => {

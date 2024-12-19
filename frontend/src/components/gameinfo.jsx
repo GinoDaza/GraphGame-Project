@@ -11,6 +11,8 @@ function GameInfo({setFocused, setValidFunct}) {
 
     const inputRef = useRef(null);
 
+    const mathRegex = /^([\d+\-*/^().x\s]*(sin|cos|tan|log|exp|sqrt)*)*$/;
+
     const handleInput = (e) => {
         setFunct(e.target.value);
 
@@ -20,10 +22,11 @@ function GameInfo({setFocused, setValidFunct}) {
             return;
         }
 
-        const mathRegex = /^[\d+\-*/^().x\s]*(sin|cos|tan|log|exp|sqrt)?[\d+\-*/^().x\s]*$/;
+        
 
         if(!mathRegex.test(validating)) {
             setValid(false);
+            console.log("Fails the regex");
             return;
         }
 
@@ -35,6 +38,7 @@ function GameInfo({setFocused, setValidFunct}) {
             else if (char === ")") {
                 if (!stack.length) {
                     setValid(false);
+                    console.log("Too many parenthesis");
                     return;
                 }
                 stack.pop();
@@ -42,6 +46,7 @@ function GameInfo({setFocused, setValidFunct}) {
         }
         if (stack.length) {
             setValid(false);
+            console.log("Too few parenthesis");
             return;
         }
 
@@ -59,12 +64,14 @@ function GameInfo({setFocused, setValidFunct}) {
 
             if(isNaN(func(0))) {
                 setValid(false);
+                console.log("Cannot evaluate function on x=0");
                 return;
             }
 
             setValid(true);
         } catch (error) {
             setValid(false);
+            console.log("Error", error);
             return;
         }
     }
@@ -77,8 +84,6 @@ function GameInfo({setFocused, setValidFunct}) {
             setValid(false);
             return;
         }
-
-        const mathRegex = /^[\d+\-*/^().x\s]*(sin|cos|tan|log|exp|sqrt)?[\d+\-*/^().x\s]*$/;
 
         if(!mathRegex.test(validating)) {
             setValid(false);

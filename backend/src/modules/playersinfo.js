@@ -1,7 +1,7 @@
 const playersinfo = {};
 
 function createPlayer(playerId) {
-    playersinfo[playerId] = {inGame: false};
+    playersinfo[playerId] = {inGame: false, health: 100};
 }
 
 function joinPlayerToGame(playerId) {
