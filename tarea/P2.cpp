@@ -27,6 +27,14 @@ class RegistroBinario{
 private:
     string filename;
     string metadata;
+
+   // Funcion auxiliar para escribir strings con su longitud (primero la longitud)
+    void writeString(ofstream& file, const string& str) {
+        size_t length = str.size();
+        file.write(reinterpret_cast<const char*>(&length), sizeof(length));
+        file.write(str.c_str(), length);
+    }
+    
 public:
 
     RegistroBinario(string _filename, string _metadata){
@@ -34,43 +42,30 @@ public:
         metadata = _metadata;
     }
 
+    // Aun no se si esta bien
     void add(const Matricula& record) {
         ofstream file(filename, ios::binary | ios::app);
         ofstream meta(metadata, ios::app);
-    
-        if (!file || !meta) {
-            cerr << "Error al abrir los archivos.\n";
-            return;
-        }
-    
-        // Obtener la posición actual en el archivo binario
-        file.seekp(0, ios::end);
-        size_t pos = file.tellp();
-    
-        // Guardar el código (tamaño + contenido)
-        size_t size = record.codigo.size();
-        file.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-        file.write(record.codigo.c_str(), size);
-    
-        // Guardar el ciclo (entero)
-        file.write(reinterpret_cast<const char*>(&record.ciclo), sizeof(int));
-    
-        // Guardar la mensualidad (float)
-        file.write(reinterpret_cast<const char*>(&record.mensualidad), sizeof(float));
-    
-        // Guardar las observaciones (tamaño + contenido)
-        size = record.observaciones.size();
-        file.write(reinterpret_cast<const char*>(&size), sizeof(size_t));
-        file.write(record.observaciones.c_str(), size);
-    
-        // Escribir un salto de línea como separador visual (opcional en binario)
-        char newline = '\n';
-        file.write(&newline, 1);
-    
-        // Calcular el tamaño del registro y guardarlo en metadata
-        size_t record_size = file.tellp() - pos;
-        meta << pos << " " << record_size << "\n";
-    
+        
+        // Guardamos la posición del cursor en datos
+        streampos pos = file.tellp();
+        meta.write(reinterpret_cast<const char*>(&pos), sizeof(pos));
+
+        // Escribimos cada campo con su tamaño cuando es tex
+        writeString(file, record.codigo);
+        file.write(reinterpret_cast<const char*>(&record.ciclo), sizeof(record.ciclo));
+        file.write(reinterpret_cast<const char*>(&record.mensualidad), sizeof(record.mensualidad));
+        writeString(file, record.observaciones);
+
+        // Calculamos el tamaño total del registro
+        size_t record_size = sizeof(size_t) + record.codigo.size() + 
+                            sizeof(record.ciclo) + 
+                            sizeof(record.mensualidad) + 
+                            sizeof(size_t) + record.observaciones.size();
+
+        // Guardamos el tamaño en el metadata
+        meta.write(reinterpret_cast<const char*>(&record_size), sizeof(record_size));
+
         file.close();
         meta.close();
     }
