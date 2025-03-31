@@ -37,18 +37,29 @@ class FixedRecord:
                 else:
                     self.header = struct.unpack("i", data)[0]
 
-
     def load(self):
         alumnos = []
 
-        if self.del_method == "MOVE_THE_LAST":
-            with open(self.filename, "rb") as file:
+        with open(self.filename, "rb") as file:
+            if self.del_method == "MOVE_THE_LAST":
                 for i in range(self.num_reg):
                     file.seek(i * self.RECORD_SIZE + 4)
                     data = file.read(self.RECORD_SIZE)
                     codigo, nombre, apellidos, carrera, ciclo, mensualidad, next_del = struct.unpack(self.FORMAT, data)
                     alumno = Alumno(codigo.decode(), nombre.decode(), apellidos.decode(), carrera.decode(), ciclo, mensualidad)
                     alumnos.append(alumno)
+            elif self.del_method == "FREE_LIST":
+                i = 0
+                while True:
+                    file.seek(i * self.RECORD_SIZE + 4)
+                    data = file.read(self.RECORD_SIZE)
+                    if not data:
+                        break
+                    codigo, nombre, apellidos, carrera, ciclo, mensualidad, next_del = struct.unpack(self.FORMAT, data)
+                    if next_del == 0:
+                        alumno = Alumno(codigo.decode(), nombre.decode(), apellidos.decode(), carrera.decode(), ciclo, mensualidad)
+                        alumnos.append(alumno)
+                    i += 1
         return alumnos
 
     def add(self, record):
@@ -68,12 +79,16 @@ class FixedRecord:
                     record = struct.pack(self.FORMAT, record.codigo.encode(), record.nombre.encode(), record.apellidos.encode(), record.carrera.encode(), record.ciclo, record.mensualidad, record.next_del)
                     file.write(record)
                 else:
-
-
-
-
+                    file.seek((self.header - 1 + 1)*self.RECORD_SIZE + 4 - 4)
+                    new_header = file.read(4)
+                    file.seek((self.header - 1)*self.RECORD_SIZE + 4)
+                    file.write(struct.pack(self.FORMAT, record.codigo.encode(), record.nombre.encode(), record.apellidos.encode(), record.carrera.encode(), record.ciclo, record.mensualidad, record.next_del))
+                    self.header = new_header
+                    
     def readRecord(self, pos):
         with open(self.filename, "rb") as file:
+            if self.del_method == "MOVE_THE_LAST" and pos >= self.num_reg:
+                return None
             file.seek(pos * self.RECORD_SIZE + 4)
             data = file.read(self.RECORD_SIZE)
             if not data:
@@ -86,7 +101,6 @@ class FixedRecord:
             alumno = Alumno(codigo.decode(), nombre.decode(), apellidos.decode(), carrera.decode(), ciclo, mensualidad)
             alumno.next_del = next_del
             return alumno
-
 
     def remove(self, pos):
         if self.del_method == "MOVE_THE_LAST":
@@ -108,7 +122,7 @@ class FixedRecord:
 
         elif self.del_method == "FREE_LIST":
             with open(self.filename, "r+b") as file:
-                file.seek(pos * self.RECORD_SIZE + 4 + struct.calcsize("5s11s20s15sif"))
+                file.seek((pos + 1) * self.RECORD_SIZE + 4 - 4)
                 file.write(struct.pack("i", self.header))
 
                 self.header = pos + 1       
