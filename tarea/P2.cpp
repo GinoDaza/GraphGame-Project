@@ -21,6 +21,10 @@ public:
     }
 
     Matricula(){}
+
+    void print_data(){
+        cout << "Codigo: " << codigo << " | Ciclo: " << ciclo << " | Mensualidad: " << mensualidad << " | Observaciones: " << observaciones << endl;  
+    }
 };
 
 class RegistroBinario{
@@ -47,11 +51,12 @@ public:
         ofstream file(filename, ios::binary | ios::app);
         ofstream meta(metadata, ios::app);
         
-        // Guardamos la posición del cursor en datos
-        streampos pos = file.tellp();
+        // Guardamos la posición del cursor en metadatos
+        streampos pos = file.tellp();                                               // aca creo que falla, no se porque solo manda 0
+        cout << pos << endl;
         meta.write(reinterpret_cast<const char*>(&pos), sizeof(pos));
 
-        // Escribimos cada campo con su tamaño cuando es tex
+        // Escribimos cada campo con su tamaño cuando es texto
         writeString(file, record.codigo);
         file.write(reinterpret_cast<const char*>(&record.ciclo), sizeof(record.ciclo));
         file.write(reinterpret_cast<const char*>(&record.mensualidad), sizeof(record.mensualidad));
@@ -72,9 +77,43 @@ public:
     
 
     Matricula readRecord(int pos){
+        // Abrimos el registro junto a su metadata
         ifstream file(filename, ios::binary);
-        Matricula record;
-        return record;
+        ifstream meta(metadata, ios::binary);
+
+        // Buscamos la posicion del registro deseado en la metadata
+        meta.seekg((sizeof(streampos) + sizeof(size_t)) * pos, ios::beg);
+
+        streampos record_pos;
+        meta.read(reinterpret_cast<char*>(&record_pos), sizeof(record_pos));               // Aca podria fallar tambien
+        
+        // Buscamos el tamaño del registro deseado en la metadata
+        size_t record_size;
+        meta.read(reinterpret_cast<char*>(&record_size), sizeof(record_size));
+
+        // Buscamos y leemos el registro de acuerdo a su posicion y tamaño
+        string codigo, observaciones;
+        int ciclo; float mensualidad;
+        size_t string_size;
+
+        file.seekg(record_pos, ios::beg);
+
+        file.read(reinterpret_cast<char*>(&string_size), sizeof(string_size));
+        codigo.resize(string_size);
+        file.read(&codigo[0], string_size);
+
+        file.read(reinterpret_cast<char*>(&ciclo), sizeof(ciclo));
+
+        file.read(reinterpret_cast<char*>(&mensualidad), sizeof(mensualidad));
+
+        file.read(reinterpret_cast<char*>(&string_size), sizeof(string_size));
+        observaciones.resize(string_size);
+        file.read(&observaciones[0], string_size);
+
+        meta.close();
+        file.close();
+
+        return Matricula(codigo, ciclo, mensualidad, observaciones);;
     }
 
     void load(){
@@ -87,12 +126,23 @@ public:
 };
 
 int main(){
+
     Matricula m1("202310505", 5, 2500.0, "zxcvbn");
     Matricula m2("202310321", 5, 2700.0, "qwerty");
     Matricula m3("202210123", 5, 2800.0, "asdfgh");
 
-    RegistroBinario registro("matriculas.dat", "matriculas_md.dat");
+    RegistroBinario registro("matriculas.dat", "metadata.dat");
 
     registro.add(m1);
+    registro.add(m2);
+    registro.add(m3);
+
+    Matricula r1 = registro.readRecord(0);
+    Matricula r2 = registro.readRecord(1);
+    Matricula r3 = registro.readRecord(2);
+
+    r1.print_data();
+    r2.print_data();
+    r3.print_data();
 
 }
