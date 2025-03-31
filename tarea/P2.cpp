@@ -48,11 +48,11 @@ public:
 
     // Aun no se si esta bien
     void add(const Matricula& record) {
-        ofstream file(filename, ios::binary | ios::app);
-        ofstream meta(metadata, ios::app);
+        ofstream file(filename, ios::binary | ios::ate | ios::app);
+        ofstream meta(metadata, ios::binary | ios::ate | ios::app);
         
         // Guardamos la posición del cursor en metadatos
-        streampos pos = file.tellp();                                               // aca creo que falla, no se porque solo manda 0
+        streampos pos = file.tellp();
         cout << pos << endl;
         meta.write(reinterpret_cast<const char*>(&pos), sizeof(pos));
 
@@ -78,14 +78,15 @@ public:
 
     Matricula readRecord(int pos){
         // Abrimos el registro junto a su metadata
-        ifstream file(filename, ios::binary);
-        ifstream meta(metadata, ios::binary);
+        ifstream file(filename, ios::binary | ios::in);
+        ifstream meta(metadata, ios::binary | ios::in);
 
         // Buscamos la posicion del registro deseado en la metadata
         meta.seekg((sizeof(streampos) + sizeof(size_t)) * pos, ios::beg);
 
         streampos record_pos;
-        meta.read(reinterpret_cast<char*>(&record_pos), sizeof(record_pos));               // Aca podria fallar tambien
+        meta.read(reinterpret_cast<char*>(&record_pos), sizeof(record_pos));
+        cout << record_pos << endl;
         
         // Buscamos el tamaño del registro deseado en la metadata
         size_t record_size;
@@ -127,9 +128,9 @@ public:
 
 int main(){
 
-    Matricula m1("202310505", 5, 2500.0, "zxcvbn");
+    Matricula m1("202310505", 4, 2500.0, "zxcvbn");
     Matricula m2("202310321", 5, 2700.0, "qwerty");
-    Matricula m3("202210123", 5, 2800.0, "asdfgh");
+    Matricula m3("202210123", 6, 2800.0, "asdfgh");
 
     RegistroBinario registro("matriculas.dat", "metadata.dat");
 
